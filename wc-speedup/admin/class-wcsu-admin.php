@@ -1381,6 +1381,15 @@ class WCSU_Admin {
                     <strong><?php _e('Important:', 'wc-speedup'); ?></strong>
                     <?php _e('Pages are only cached for NON-logged-in visitors. To test, open your site in a private/incognito browser window.', 'wc-speedup'); ?>
                 </p>
+
+                <h3 style="margin-top: 20px;"><?php _e('Debug Log', 'wc-speedup'); ?></h3>
+                <p class="description"><?php _e('Visit pages in incognito mode then refresh this page to see the log.', 'wc-speedup'); ?></p>
+                <textarea readonly style="width: 100%; height: 200px; font-family: monospace; font-size: 12px; background: #f0f0f1;"><?php echo esc_textarea(wcsu()->page_cache->get_debug_log()); ?></textarea>
+                <p>
+                    <button class="button button-secondary" id="wcsu-clear-debug-log">
+                        <?php _e('Clear Debug Log', 'wc-speedup'); ?>
+                    </button>
+                </p>
             </div>
 
             <!-- How It Works -->
@@ -1521,6 +1530,34 @@ class WCSU_Admin {
                     success: function(response) {
                         if (response.success) {
                             WCSU_Admin.showToast(response.data, 'success');
+                        } else {
+                            WCSU_Admin.showToast(response.data, 'error');
+                        }
+                    },
+                    complete: function() {
+                        $btn.prop('disabled', false);
+                    }
+                });
+            });
+
+            // Clear debug log
+            $('#wcsu-clear-debug-log').on('click', function(e) {
+                e.preventDefault();
+
+                var $btn = $(this);
+                $btn.prop('disabled', true);
+
+                $.ajax({
+                    url: wcsu_vars.ajax_url,
+                    type: 'POST',
+                    data: {
+                        action: 'wcsu_clear_debug_log',
+                        nonce: wcsu_vars.nonce
+                    },
+                    success: function(response) {
+                        if (response.success) {
+                            WCSU_Admin.showToast(response.data, 'success');
+                            location.reload();
                         } else {
                             WCSU_Admin.showToast(response.data, 'error');
                         }

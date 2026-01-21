@@ -41,6 +41,7 @@ class WCSU_Page_Cache {
         add_action('wp_ajax_wcsu_clear_page_cache', array($this, 'ajax_clear_page_cache'));
         add_action('wp_ajax_wcsu_get_page_cache_stats', array($this, 'ajax_get_stats'));
         add_action('wp_ajax_wcsu_test_page_cache', array($this, 'ajax_test_cache'));
+        add_action('wp_ajax_wcsu_clear_debug_log', array($this, 'ajax_clear_debug_log'));
 
         // Clear cache on content updates
         add_action('save_post', array($this, 'clear_post_cache'), 10, 2);
@@ -155,41 +156,60 @@ class WCSU_Page_Cache {
     }
 
     /**
+     * Log debug message to file
+     */
+    private function debug_log($message) {
+        $log_file = $this->cache_dir . 'debug.log';
+        $timestamp = date('Y-m-d H:i:s');
+        $entry = "[{$timestamp}] {$message}\n";
+        @file_put_contents($log_file, $entry, FILE_APPEND | LOCK_EX);
+    }
+
+    /**
      * Check if request should be cached
      */
     private function should_cache_request() {
+        $uri = isset($_SERVER['REQUEST_URI']) ? $_SERVER['REQUEST_URI'] : 'unknown';
+
         // Only cache GET requests
         if ($_SERVER['REQUEST_METHOD'] !== 'GET') {
+            $this->debug_log("SKIP: Not GET request - {$uri}");
             return false;
         }
 
         // Don't cache if user is logged in
         if (is_user_logged_in()) {
+            $this->debug_log("SKIP: User logged in - {$uri}");
             return false;
         }
 
         // Don't cache if user has WooCommerce session/cart (CRITICAL for preventing cart leakage)
         if ($this->has_woocommerce_cart()) {
+            $this->debug_log("SKIP: Has WooCommerce cart - {$uri}");
             return false;
         }
 
         // Don't cache admin pages
         if (is_admin()) {
+            $this->debug_log("SKIP: Is admin - {$uri}");
             return false;
         }
 
         // Don't cache AJAX requests
         if (wp_doing_ajax()) {
+            $this->debug_log("SKIP: Is AJAX - {$uri}");
             return false;
         }
 
         // Don't cache WP cron
         if (wp_doing_cron()) {
+            $this->debug_log("SKIP: Is cron - {$uri}");
             return false;
         }
 
         // Don't cache REST API requests
         if (defined('REST_REQUEST') && REST_REQUEST) {
+            $this->debug_log("SKIP: Is REST - {$uri}");
             return false;
         }
 
@@ -206,9 +226,11 @@ class WCSU_Page_Cache {
 
         // Don't cache excluded URLs
         if ($this->is_excluded_url()) {
+            $this->debug_log("SKIP: Excluded URL - {$uri}");
             return false;
         }
 
+        $this->debug_log("PASS: Will cache - {$uri}");
         return true;
     }
 
@@ -341,36 +363,46 @@ class WCSU_Page_Cache {
      * Start output buffering
      */
     public function start_buffering() {
+        $uri = isset($_SERVER['REQUEST_URI']) ? $_SERVER['REQUEST_URI'] : 'unknown';
+
         // Additional checks after WordPress is loaded
         if (is_user_logged_in()) {
+            $this->debug_log("BUFFER SKIP: User logged in - {$uri}");
             return;
         }
 
         // Check WooCommerce-specific conditions
         if (function_exists('is_cart') && is_cart()) {
+            $this->debug_log("BUFFER SKIP: Is cart page - {$uri}");
             return;
         }
         if (function_exists('is_checkout') && is_checkout()) {
+            $this->debug_log("BUFFER SKIP: Is checkout page - {$uri}");
             return;
         }
         if (function_exists('is_account_page') && is_account_page()) {
+            $this->debug_log("BUFFER SKIP: Is account page - {$uri}");
             return;
         }
         if (function_exists('is_wc_endpoint_url') && is_wc_endpoint_url()) {
+            $this->debug_log("BUFFER SKIP: Is WC endpoint - {$uri}");
             return;
         }
 
         // Don't cache 404 pages
         if (is_404()) {
+            $this->debug_log("BUFFER SKIP: Is 404 - {$uri}");
             return;
         }
 
         // Don't cache search results
         if (is_search()) {
+            $this->debug_log("BUFFER SKIP: Is search - {$uri}");
             return;
         }
 
         // Start buffering
+        $this->debug_log("BUFFER START: {$uri}");
         ob_start(array($this, 'save_cache'));
     }
 
@@ -378,30 +410,41 @@ class WCSU_Page_Cache {
      * Save the page to cache
      */
     public function save_cache($buffer) {
+        $uri = isset($_SERVER['REQUEST_URI']) ? $_SERVER['REQUEST_URI'] : 'unknown';
+        $buffer_len = strlen($buffer);
+
+        $this->debug_log("SAVE START: {$uri} (buffer size: {$buffer_len})");
+
         // Don't cache empty content
         if (empty($buffer)) {
+            $this->debug_log("SAVE SKIP: Empty buffer - {$uri}");
             return $buffer;
         }
 
         // Don't cache if there was an error
-        if (http_response_code() !== 200) {
+        $response_code = http_response_code();
+        if ($response_code !== 200) {
+            $this->debug_log("SAVE SKIP: HTTP {$response_code} - {$uri}");
             return $buffer;
         }
 
         // Don't cache partial content
-        if (strpos($buffer, '</html>') === false) {
+        if (strpos($buffer, '</html>') === false && strpos($buffer, '</HTML>') === false) {
+            $this->debug_log("SAVE SKIP: No </html> tag - {$uri}");
             return $buffer;
         }
 
         // SAFETY CHECK: Double-check for WooCommerce session cookies
         // (in case something changed during page rendering)
         if ($this->has_woocommerce_cart()) {
+            $this->debug_log("SAVE SKIP: Has cart in save - {$uri}");
             return $buffer;
         }
 
         // SAFETY CHECK: Don't cache if page contains personalized cart data
         // Look for signs of cart content that shouldn't be cached
         if ($this->contains_personal_cart_data($buffer)) {
+            $this->debug_log("SAVE SKIP: Contains cart data - {$uri}");
             return $buffer;
         }
 
@@ -409,16 +452,19 @@ class WCSU_Page_Cache {
         $cache_file = $this->get_cache_file_path();
         $cache_dir = dirname($cache_file);
 
+        $this->debug_log("SAVE: Cache file path: {$cache_file}");
+
         // Create directory if needed (with proper permissions)
         if (!file_exists($cache_dir)) {
             if (!wp_mkdir_p($cache_dir)) {
-                // Failed to create directory, skip caching
+                $this->debug_log("SAVE FAIL: Could not create dir {$cache_dir}");
                 return $buffer;
             }
         }
 
         // Verify directory is writable
         if (!is_writable($cache_dir)) {
+            $this->debug_log("SAVE FAIL: Dir not writable {$cache_dir}");
             return $buffer;
         }
 
@@ -432,8 +478,11 @@ class WCSU_Page_Cache {
 
         // If save failed, don't add cache header
         if ($saved === false) {
+            $this->debug_log("SAVE FAIL: file_put_contents failed - {$uri}");
             return $buffer;
         }
+
+        $this->debug_log("SAVE SUCCESS: Saved {$saved} bytes to {$cache_file}");
 
         // Add miss header
         if (!headers_sent()) {
@@ -647,6 +696,31 @@ class WCSU_Page_Cache {
     }
 
     /**
+     * Get debug log contents
+     */
+    public function get_debug_log() {
+        $log_file = $this->cache_dir . 'debug.log';
+        if (file_exists($log_file)) {
+            $content = file_get_contents($log_file);
+            // Get last 100 lines
+            $lines = explode("\n", $content);
+            $lines = array_slice($lines, -100);
+            return implode("\n", $lines);
+        }
+        return 'No debug log found. Visit pages in incognito mode to generate log.';
+    }
+
+    /**
+     * Clear debug log
+     */
+    public function clear_debug_log() {
+        $log_file = $this->cache_dir . 'debug.log';
+        if (file_exists($log_file)) {
+            @unlink($log_file);
+        }
+    }
+
+    /**
      * Test if caching is working by creating a test file
      */
     public function test_cache_write() {
@@ -758,5 +832,19 @@ class WCSU_Page_Cache {
         } else {
             wp_send_json_error($result['message']);
         }
+    }
+
+    /**
+     * AJAX: Clear debug log
+     */
+    public function ajax_clear_debug_log() {
+        check_ajax_referer('wcsu_nonce', 'nonce');
+
+        if (!current_user_can('manage_options')) {
+            wp_send_json_error(__('Permission denied', 'wc-speedup'));
+        }
+
+        $this->clear_debug_log();
+        wp_send_json_success(__('Debug log cleared', 'wc-speedup'));
     }
 }
