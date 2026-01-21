@@ -69,6 +69,15 @@ class WCSU_Admin {
             'wc-speedup-settings',
             array($this, 'render_settings')
         );
+
+        add_submenu_page(
+            'wc-speedup',
+            __('Query Profiler', 'wc-speedup'),
+            __('Query Profiler', 'wc-speedup'),
+            'manage_options',
+            'wc-speedup-profiler',
+            array($this, 'render_profiler')
+        );
     }
 
     /**
@@ -703,6 +712,267 @@ class WCSU_Admin {
                 </p>
 
             </form>
+
+        </div>
+        <?php
+    }
+
+    /**
+     * Render query profiler page
+     */
+    public function render_profiler() {
+        $options = get_option('wcsu_options', array());
+        $autoload_analysis = wcsu()->query_profiler->analyze_autoload();
+        $index_check = wcsu()->query_profiler->check_indexes();
+        $query_stats = wcsu()->query_profiler->get_query_stats();
+
+        ?>
+        <div class="wrap wcsu-wrap">
+            <h1><?php _e('Query Profiler - Database Performance Analyzer', 'wc-speedup'); ?></h1>
+
+            <p class="wcsu-intro">
+                <?php _e('This tool helps you identify slow database queries, missing indexes, and autoloaded data that slows down every page load.', 'wc-speedup'); ?>
+            </p>
+
+            <!-- Enable Profiler -->
+            <div class="wcsu-settings-section">
+                <h2><?php _e('Enable Query Profiling', 'wc-speedup'); ?></h2>
+                <p>
+                    <label>
+                        <input type="checkbox" id="wcsu-enable-profiler" name="enable_query_profiler" value="1" <?php checked(!empty($options['enable_query_profiler'])); ?>>
+                        <?php _e('Enable query profiling (shows query stats in admin bar)', 'wc-speedup'); ?>
+                    </label>
+                </p>
+                <p class="description">
+                    <?php _e('When enabled, you will see query count and time in the admin bar. Browse your site to collect data.', 'wc-speedup'); ?>
+                </p>
+            </div>
+
+            <!-- Autoload Analysis -->
+            <div class="wcsu-profiler-section">
+                <h2><?php _e('Autoloaded Options Analysis', 'wc-speedup'); ?></h2>
+                <p class="description">
+                    <?php _e('Autoloaded options are loaded on EVERY page request. Large autoload data is a major cause of slow sites.', 'wc-speedup'); ?>
+                </p>
+
+                <div class="wcsu-autoload-summary">
+                    <div class="wcsu-db-stat <?php echo $autoload_analysis['total_size'] > 1000000 ? 'wcsu-stat-bad' : ($autoload_analysis['total_size'] > 500000 ? 'wcsu-stat-warning' : 'wcsu-stat-good'); ?>">
+                        <span class="wcsu-db-stat-value"><?php echo size_format($autoload_analysis['total_size']); ?></span>
+                        <span class="wcsu-db-stat-label"><?php _e('Total Autoload Size', 'wc-speedup'); ?></span>
+                    </div>
+                    <div class="wcsu-db-stat">
+                        <span class="wcsu-db-stat-value"><?php echo number_format($autoload_analysis['total_count']); ?></span>
+                        <span class="wcsu-db-stat-label"><?php _e('Autoloaded Options', 'wc-speedup'); ?></span>
+                    </div>
+                </div>
+
+                <?php if ($autoload_analysis['total_size'] > 800000): ?>
+                <div class="wcsu-alert wcsu-alert-danger">
+                    <strong><?php _e('Critical:', 'wc-speedup'); ?></strong>
+                    <?php _e('Your autoloaded data is very large! This significantly slows down every page load.', 'wc-speedup'); ?>
+                </div>
+                <?php endif; ?>
+
+                <!-- By Plugin -->
+                <h3><?php _e('Autoload Size by Source', 'wc-speedup'); ?></h3>
+                <table class="wcsu-profiler-table widefat">
+                    <thead>
+                        <tr>
+                            <th><?php _e('Source', 'wc-speedup'); ?></th>
+                            <th><?php _e('Size', 'wc-speedup'); ?></th>
+                            <th><?php _e('Options', 'wc-speedup'); ?></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php foreach (array_slice($autoload_analysis['by_plugin'], 0, 15, true) as $plugin => $data): ?>
+                        <tr>
+                            <td><strong><?php echo esc_html($plugin); ?></strong></td>
+                            <td class="<?php echo $data['size'] > 100000 ? 'wcsu-warning' : ''; ?>">
+                                <?php echo size_format($data['size']); ?>
+                            </td>
+                            <td><?php echo number_format($data['count']); ?></td>
+                        </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
+
+                <!-- Large Options -->
+                <?php if (!empty($autoload_analysis['large_options'])): ?>
+                <h3><?php _e('Large Autoloaded Options (> 10KB)', 'wc-speedup'); ?></h3>
+                <table class="wcsu-profiler-table widefat">
+                    <thead>
+                        <tr>
+                            <th><?php _e('Option Name', 'wc-speedup'); ?></th>
+                            <th><?php _e('Size', 'wc-speedup'); ?></th>
+                            <th><?php _e('Source', 'wc-speedup'); ?></th>
+                            <th><?php _e('Action', 'wc-speedup'); ?></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php foreach ($autoload_analysis['large_options'] as $option): ?>
+                        <tr>
+                            <td><code><?php echo esc_html($option['name']); ?></code></td>
+                            <td class="wcsu-warning"><?php echo size_format($option['size']); ?></td>
+                            <td><?php echo esc_html($option['plugin']); ?></td>
+                            <td>
+                                <?php if ($option['can_disable']): ?>
+                                <button class="button wcsu-disable-autoload-btn" data-option="<?php echo esc_attr($option['name']); ?>">
+                                    <?php _e('Disable Autoload', 'wc-speedup'); ?>
+                                </button>
+                                <?php else: ?>
+                                <span class="wcsu-critical-option"><?php _e('Critical option', 'wc-speedup'); ?></span>
+                                <?php endif; ?>
+                            </td>
+                        </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
+                <?php endif; ?>
+            </div>
+
+            <!-- Missing Indexes -->
+            <div class="wcsu-profiler-section">
+                <h2><?php _e('Database Indexes', 'wc-speedup'); ?></h2>
+                <p class="description">
+                    <?php _e('Missing indexes can make database queries extremely slow. These indexes are recommended for optimal performance.', 'wc-speedup'); ?>
+                </p>
+
+                <?php if (!empty($index_check['missing'])): ?>
+                <div class="wcsu-alert wcsu-alert-warning">
+                    <strong><?php _e('Missing Indexes Found:', 'wc-speedup'); ?></strong>
+                    <?php printf(__('%d recommended indexes are missing from your database.', 'wc-speedup'), count($index_check['missing'])); ?>
+                </div>
+
+                <table class="wcsu-profiler-table widefat">
+                    <thead>
+                        <tr>
+                            <th><?php _e('Table', 'wc-speedup'); ?></th>
+                            <th><?php _e('Index', 'wc-speedup'); ?></th>
+                            <th><?php _e('Reason', 'wc-speedup'); ?></th>
+                            <th><?php _e('Action', 'wc-speedup'); ?></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php foreach ($index_check['missing'] as $index): ?>
+                        <tr>
+                            <td><code><?php echo esc_html($index['table']); ?></code></td>
+                            <td><code><?php echo esc_html($index['index']); ?></code></td>
+                            <td><?php echo esc_html($index['reason']); ?></td>
+                            <td>
+                                <button class="button button-primary wcsu-add-index-btn"
+                                        data-table="<?php echo esc_attr($index['table']); ?>"
+                                        data-index="<?php echo esc_attr($index['index']); ?>"
+                                        data-sql="<?php echo esc_attr($index['sql']); ?>">
+                                    <?php _e('Add Index', 'wc-speedup'); ?>
+                                </button>
+                            </td>
+                        </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
+                <?php else: ?>
+                <div class="wcsu-alert wcsu-alert-success">
+                    <?php _e('All recommended indexes are in place.', 'wc-speedup'); ?>
+                </div>
+                <?php endif; ?>
+
+                <?php if (!empty($index_check['recommendations'])): ?>
+                <h3><?php _e('Additional Recommendations', 'wc-speedup'); ?></h3>
+                <ul class="wcsu-recommendations-list">
+                    <?php foreach ($index_check['recommendations'] as $rec): ?>
+                    <li class="wcsu-rec-<?php echo esc_attr($rec['type']); ?>">
+                        <?php echo esc_html($rec['message']); ?>
+                    </li>
+                    <?php endforeach; ?>
+                </ul>
+                <?php endif; ?>
+            </div>
+
+            <!-- Query Stats -->
+            <?php if ($query_stats): ?>
+            <div class="wcsu-profiler-section">
+                <h2><?php _e('Query Statistics (Last 50 Page Loads)', 'wc-speedup'); ?></h2>
+
+                <div class="wcsu-db-overview">
+                    <div class="wcsu-db-stat">
+                        <span class="wcsu-db-stat-value"><?php echo $query_stats['avg_queries']; ?></span>
+                        <span class="wcsu-db-stat-label"><?php _e('Avg Queries/Page', 'wc-speedup'); ?></span>
+                    </div>
+                    <div class="wcsu-db-stat <?php echo $query_stats['avg_query_time'] > 1 ? 'wcsu-stat-bad' : ($query_stats['avg_query_time'] > 0.5 ? 'wcsu-stat-warning' : 'wcsu-stat-good'); ?>">
+                        <span class="wcsu-db-stat-value"><?php echo $query_stats['avg_query_time']; ?>s</span>
+                        <span class="wcsu-db-stat-label"><?php _e('Avg Query Time', 'wc-speedup'); ?></span>
+                    </div>
+                    <div class="wcsu-db-stat <?php echo $query_stats['avg_page_time'] > 3 ? 'wcsu-stat-bad' : ($query_stats['avg_page_time'] > 1.5 ? 'wcsu-stat-warning' : 'wcsu-stat-good'); ?>">
+                        <span class="wcsu-db-stat-value"><?php echo $query_stats['avg_page_time']; ?>s</span>
+                        <span class="wcsu-db-stat-label"><?php _e('Avg Page Time', 'wc-speedup'); ?></span>
+                    </div>
+                </div>
+
+                <!-- Slow Query Sources -->
+                <?php if (!empty($query_stats['slow_query_sources'])): ?>
+                <h3><?php _e('Slow Query Sources', 'wc-speedup'); ?></h3>
+                <p class="description"><?php _e('These plugins/themes are generating the most slow queries:', 'wc-speedup'); ?></p>
+                <table class="wcsu-profiler-table widefat">
+                    <thead>
+                        <tr>
+                            <th><?php _e('Source', 'wc-speedup'); ?></th>
+                            <th><?php _e('Slow Queries', 'wc-speedup'); ?></th>
+                            <th><?php _e('Total Time', 'wc-speedup'); ?></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php foreach (array_slice($query_stats['slow_query_sources'], 0, 10, true) as $source => $data): ?>
+                        <tr>
+                            <td><strong><?php echo esc_html($source); ?></strong></td>
+                            <td><?php echo number_format($data['count']); ?></td>
+                            <td class="wcsu-warning"><?php echo number_format($data['total_time'], 2); ?>ms</td>
+                        </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
+                <?php endif; ?>
+
+                <!-- Slowest Pages -->
+                <?php if (!empty($query_stats['slowest_pages'])): ?>
+                <h3><?php _e('Slowest Pages', 'wc-speedup'); ?></h3>
+                <table class="wcsu-profiler-table widefat">
+                    <thead>
+                        <tr>
+                            <th><?php _e('URL', 'wc-speedup'); ?></th>
+                            <th><?php _e('Queries', 'wc-speedup'); ?></th>
+                            <th><?php _e('Query Time', 'wc-speedup'); ?></th>
+                            <th><?php _e('Page Time', 'wc-speedup'); ?></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php foreach (array_slice($query_stats['slowest_pages'], 0, 10) as $page): ?>
+                        <tr>
+                            <td><code><?php echo esc_html($page['url']); ?></code></td>
+                            <td><?php echo number_format($page['query_count']); ?></td>
+                            <td class="<?php echo $page['query_time'] > 1 ? 'wcsu-warning' : ''; ?>">
+                                <?php echo number_format($page['query_time'], 3); ?>s
+                            </td>
+                            <td class="<?php echo $page['time'] > 3 ? 'wcsu-warning' : ''; ?>">
+                                <?php echo number_format($page['time'], 3); ?>s
+                            </td>
+                        </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
+                <?php endif; ?>
+
+                <p>
+                    <button class="button" id="wcsu-clear-query-log">
+                        <?php _e('Clear Query Log', 'wc-speedup'); ?>
+                    </button>
+                </p>
+            </div>
+            <?php else: ?>
+            <div class="wcsu-profiler-section">
+                <h2><?php _e('Query Statistics', 'wc-speedup'); ?></h2>
+                <p><?php _e('No query data collected yet. Enable the profiler and browse your site to collect data.', 'wc-speedup'); ?></p>
+            </div>
+            <?php endif; ?>
 
         </div>
         <?php

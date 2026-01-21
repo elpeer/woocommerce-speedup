@@ -32,6 +32,18 @@
 
             // Settings form
             $(document).on('submit', '#wcsu-settings-form', this.handleSettingsSave);
+
+            // Profiler: Enable profiler checkbox
+            $(document).on('change', '#wcsu-enable-profiler', this.handleEnableProfiler);
+
+            // Profiler: Disable autoload buttons
+            $(document).on('click', '.wcsu-disable-autoload-btn', this.handleDisableAutoload);
+
+            // Profiler: Add index buttons
+            $(document).on('click', '.wcsu-add-index-btn', this.handleAddIndex);
+
+            // Profiler: Clear query log
+            $(document).on('click', '#wcsu-clear-query-log', this.handleClearQueryLog);
         },
 
         /**
@@ -328,6 +340,146 @@
                     $(this).remove();
                 });
             }, 3000);
+        },
+
+        /**
+         * Handle enable profiler checkbox
+         */
+        handleEnableProfiler: function() {
+            var enabled = $(this).is(':checked') ? 1 : 0;
+
+            $.ajax({
+                url: wcsu_vars.ajax_url,
+                type: 'POST',
+                data: {
+                    action: 'wcsu_save_options',
+                    options: { enable_query_profiler: enabled },
+                    nonce: wcsu_vars.nonce
+                },
+                success: function(response) {
+                    if (response.success) {
+                        WCSU_Admin.showToast(response.data, 'success');
+                    }
+                }
+            });
+        },
+
+        /**
+         * Handle disable autoload button
+         */
+        handleDisableAutoload: function(e) {
+            e.preventDefault();
+            var $btn = $(this);
+            var option = $btn.data('option');
+
+            if ($btn.hasClass('loading')) {
+                return;
+            }
+
+            if (!confirm('Are you sure you want to disable autoload for this option?')) {
+                return;
+            }
+
+            var originalText = $btn.text();
+            $btn.addClass('loading').text('...');
+
+            $.ajax({
+                url: wcsu_vars.ajax_url,
+                type: 'POST',
+                data: {
+                    action: 'wcsu_fix_autoload',
+                    option: option,
+                    nonce: wcsu_vars.nonce
+                },
+                success: function(response) {
+                    if (response.success) {
+                        WCSU_Admin.showToast(response.data, 'success');
+                        $btn.closest('tr').fadeOut();
+                    } else {
+                        WCSU_Admin.showToast(response.data, 'error');
+                    }
+                },
+                error: function() {
+                    WCSU_Admin.showToast(wcsu_vars.strings.error, 'error');
+                },
+                complete: function() {
+                    $btn.removeClass('loading').text(originalText);
+                }
+            });
+        },
+
+        /**
+         * Handle add index button
+         */
+        handleAddIndex: function(e) {
+            e.preventDefault();
+            var $btn = $(this);
+            var table = $btn.data('table');
+            var index = $btn.data('index');
+            var sql = $btn.data('sql');
+
+            if ($btn.hasClass('loading')) {
+                return;
+            }
+
+            if (!confirm('Are you sure you want to add this index? This may take a moment on large tables.')) {
+                return;
+            }
+
+            var originalText = $btn.text();
+            $btn.addClass('loading').text('Adding...');
+
+            $.ajax({
+                url: wcsu_vars.ajax_url,
+                type: 'POST',
+                data: {
+                    action: 'wcsu_add_index',
+                    table: table,
+                    index: index,
+                    sql: sql,
+                    nonce: wcsu_vars.nonce
+                },
+                success: function(response) {
+                    if (response.success) {
+                        WCSU_Admin.showToast(response.data, 'success');
+                        $btn.closest('tr').fadeOut();
+                    } else {
+                        WCSU_Admin.showToast(response.data, 'error');
+                    }
+                },
+                error: function() {
+                    WCSU_Admin.showToast(wcsu_vars.strings.error, 'error');
+                },
+                complete: function() {
+                    $btn.removeClass('loading').text(originalText);
+                }
+            });
+        },
+
+        /**
+         * Handle clear query log
+         */
+        handleClearQueryLog: function(e) {
+            e.preventDefault();
+
+            if (!confirm('Clear all query log data?')) {
+                return;
+            }
+
+            // Just delete the option via save_options with empty
+            $.ajax({
+                url: wcsu_vars.ajax_url,
+                type: 'POST',
+                data: {
+                    action: 'wcsu_save_options',
+                    options: { clear_query_log: 1 },
+                    nonce: wcsu_vars.nonce
+                },
+                success: function(response) {
+                    WCSU_Admin.showToast('Query log cleared', 'success');
+                    location.reload();
+                }
+            });
         }
     };
 
