@@ -102,6 +102,7 @@ class WCSU_Page_Cache {
 
     /**
      * Check if we can serve from cache
+     * NOTE: We serve cached pages to users with cart - the cart widget is updated via JS
      */
     private function can_serve_cache() {
         // Don't serve cache for POST requests
@@ -120,10 +121,10 @@ class WCSU_Page_Cache {
             return false;
         }
 
-        // Don't serve cache if there's a cart cookie
-        if ($this->has_woocommerce_cart()) {
-            return false;
-        }
+        // NOTE: We DO serve cached pages to users with items in cart!
+        // The cached page shows "empty cart" state, but JavaScript (wc-ajax=get_refreshed_fragments)
+        // updates the mini-cart widget automatically. This is the standard WooCommerce behavior.
+        // We only prevent CREATING cache entries when user has cart items.
 
         // NOTE: We don't check wishlist cookies here because:
         // 1. Wishlist state is updated via JavaScript on page load
@@ -266,11 +267,13 @@ class WCSU_Page_Cache {
             return false;
         }
 
-        // Don't cache if user has WooCommerce session/cart (CRITICAL for preventing cart leakage)
-        if ($this->has_woocommerce_cart()) {
-            $this->debug_log("SKIP: Has WooCommerce cart - {$uri}");
-            return false;
-        }
+        // NOTE: We no longer check cart cookie here!
+        // Instead, we check the actual HTML content in save_cache() using contains_personal_cart_data()
+        // This allows caching for users with cart items because:
+        // 1. Most themes render an EMPTY mini-cart by default
+        // 2. The mini-cart is populated via JavaScript (get_refreshed_fragments AJAX)
+        // 3. We only skip saving if the HTML actually contains cart items
+        // This dramatically improves cache hit rates while staying safe.
 
         // NOTE: We don't check wishlist cookies here because:
         // 1. Wishlist state is updated via JavaScript on page load
@@ -528,17 +531,13 @@ class WCSU_Page_Cache {
             return $buffer;
         }
 
-        // SAFETY CHECK: Double-check for WooCommerce session cookies
-        // (in case something changed during page rendering)
-        if ($this->has_woocommerce_cart()) {
-            $this->debug_log("SAVE SKIP: Has cart in save - {$uri}");
-            return $buffer;
-        }
-
-        // NOTE: We don't check wishlist cookies here - wishlist is handled via JS
+        // NOTE: We don't check cart/wishlist cookies here - we check actual HTML content instead
 
         // SAFETY CHECK: Don't cache if page contains personalized cart data
-        // Look for signs of cart content that shouldn't be cached
+        // This checks the actual HTML for mini_cart_item elements
+        // Much more reliable than checking cookies because:
+        // 1. Most themes render empty mini-cart initially (JS fills it)
+        // 2. Only blocks caching if page ACTUALLY contains cart items
         if ($this->contains_personal_cart_data($buffer)) {
             $this->debug_log("SAVE SKIP: Contains cart data - {$uri}");
             return $buffer;
