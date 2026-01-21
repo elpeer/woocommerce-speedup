@@ -3,7 +3,7 @@
  * Plugin Name: WooHoo - WooCommerce Performance Optimizer
  * Plugin URI: https://github.com/elpeer/woocommerce-speedup
  * Description: WooCommerce, but faster. WooHoo! Your shop on espresso: faster browsing, smoother checkout.
- * Version: 1.2.1
+ * Version: 1.2.2
  * Author: ElPeer
  * Author URI: https://github.com/elpeer
  * Text Domain: woohoo
@@ -21,7 +21,7 @@ if (!defined('ABSPATH')) {
 }
 
 // Plugin constants
-define('WCSU_VERSION', '1.2.1');
+define('WCSU_VERSION', '1.2.2');
 define('WCSU_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('WCSU_PLUGIN_URL', plugin_dir_url(__FILE__));
 define('WCSU_PLUGIN_BASENAME', plugin_basename(__FILE__));
@@ -113,10 +113,10 @@ final class WC_SpeedUp {
         require_once WCSU_PLUGIN_DIR . 'includes/class-wcsu-remove-query-strings.php';
         require_once WCSU_PLUGIN_DIR . 'includes/class-wcsu-font-optimization.php';
         require_once WCSU_PLUGIN_DIR . 'includes/class-wcsu-preload-resources.php';
-        require_once WCSU_PLUGIN_DIR . 'includes/class-wcsu-delay-js.php'; // For third-party scripts
 
-        // Risky modules - keep disabled
+        // Risky modules - disabled (cause site issues)
         // require_once WCSU_PLUGIN_DIR . 'includes/class-wcsu-defer-js.php';
+        // require_once WCSU_PLUGIN_DIR . 'includes/class-wcsu-delay-js.php';
         // require_once WCSU_PLUGIN_DIR . 'includes/class-wcsu-minify-html.php';
 
         // Admin includes
@@ -163,10 +163,10 @@ final class WC_SpeedUp {
         $this->remove_query_strings = new WCSU_Remove_Query_Strings();
         $this->font_optimization = new WCSU_Font_Optimization();
         $this->preload_resources = new WCSU_Preload_Resources();
-        $this->delay_js = new WCSU_Delay_JS(); // For third-party scripts only
 
-        // Risky modules - keep disabled
+        // Risky modules - disabled (cause site issues)
         // $this->defer_js = new WCSU_Defer_JS();
+        // $this->delay_js = new WCSU_Delay_JS();
         // $this->minify_html = new WCSU_Minify_HTML();
 
         if (is_admin()) {
