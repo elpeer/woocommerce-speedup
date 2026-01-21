@@ -1326,10 +1326,60 @@ class WCSU_Admin {
                         <span class="dashicons dashicons-trash"></span>
                         <?php _e('Clear All Page Cache', 'wc-speedup'); ?>
                     </button>
+                    &nbsp;
+                    <button class="button button-secondary" id="wcsu-test-page-cache">
+                        <span class="dashicons dashicons-yes"></span>
+                        <?php _e('Test Cache Writing', 'wc-speedup'); ?>
+                    </button>
                 </p>
 
                 <p class="description">
                     <?php _e('Cache is automatically cleared when you update posts, products, or change themes.', 'wc-speedup'); ?>
+                </p>
+            </div>
+
+            <!-- Debug Info -->
+            <div class="wcsu-settings-section">
+                <h2><?php _e('Debug Information', 'wc-speedup'); ?></h2>
+                <table class="widefat" style="max-width: 600px;">
+                    <tr>
+                        <td><strong><?php _e('Cache Directory', 'wc-speedup'); ?></strong></td>
+                        <td><code><?php echo esc_html($page_cache_stats['cache_dir']); ?></code></td>
+                    </tr>
+                    <tr>
+                        <td><strong><?php _e('Directory Exists', 'wc-speedup'); ?></strong></td>
+                        <td>
+                            <?php if (!empty($page_cache_stats['dir_exists'])): ?>
+                                <span style="color: green;">✓ <?php _e('Yes', 'wc-speedup'); ?></span>
+                            <?php else: ?>
+                                <span style="color: red;">✗ <?php _e('No', 'wc-speedup'); ?></span>
+                            <?php endif; ?>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><strong><?php _e('Directory Writable', 'wc-speedup'); ?></strong></td>
+                        <td>
+                            <?php if (!empty($page_cache_stats['dir_writable'])): ?>
+                                <span style="color: green;">✓ <?php _e('Yes', 'wc-speedup'); ?></span>
+                            <?php else: ?>
+                                <span style="color: red;">✗ <?php _e('No', 'wc-speedup'); ?></span>
+                            <?php endif; ?>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><strong><?php _e('Cache Enabled in Options', 'wc-speedup'); ?></strong></td>
+                        <td>
+                            <?php if (!empty($options['enable_page_cache'])): ?>
+                                <span style="color: green;">✓ <?php _e('Yes', 'wc-speedup'); ?></span>
+                            <?php else: ?>
+                                <span style="color: red;">✗ <?php _e('No', 'wc-speedup'); ?></span>
+                            <?php endif; ?>
+                        </td>
+                    </tr>
+                </table>
+                <p class="description" style="margin-top: 15px;">
+                    <strong><?php _e('Important:', 'wc-speedup'); ?></strong>
+                    <?php _e('Pages are only cached for NON-logged-in visitors. To test, open your site in a private/incognito browser window.', 'wc-speedup'); ?>
                 </p>
             </div>
 
@@ -1444,6 +1494,33 @@ class WCSU_Admin {
                         if (response.success) {
                             WCSU_Admin.showToast(response.data, 'success');
                             location.reload();
+                        } else {
+                            WCSU_Admin.showToast(response.data, 'error');
+                        }
+                    },
+                    complete: function() {
+                        $btn.prop('disabled', false);
+                    }
+                });
+            });
+
+            // Test page cache
+            $('#wcsu-test-page-cache').on('click', function(e) {
+                e.preventDefault();
+
+                var $btn = $(this);
+                $btn.prop('disabled', true);
+
+                $.ajax({
+                    url: wcsu_vars.ajax_url,
+                    type: 'POST',
+                    data: {
+                        action: 'wcsu_test_page_cache',
+                        nonce: wcsu_vars.nonce
+                    },
+                    success: function(response) {
+                        if (response.success) {
+                            WCSU_Admin.showToast(response.data, 'success');
                         } else {
                             WCSU_Admin.showToast(response.data, 'error');
                         }

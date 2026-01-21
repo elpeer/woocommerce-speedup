@@ -40,6 +40,7 @@ class WCSU_Page_Cache {
         add_action('wp_ajax_wcsu_toggle_page_cache', array($this, 'ajax_toggle_page_cache'));
         add_action('wp_ajax_wcsu_clear_page_cache', array($this, 'ajax_clear_page_cache'));
         add_action('wp_ajax_wcsu_get_page_cache_stats', array($this, 'ajax_get_stats'));
+        add_action('wp_ajax_wcsu_test_page_cache', array($this, 'ajax_test_cache'));
 
         // Clear cache on content updates
         add_action('save_post', array($this, 'clear_post_cache'), 10, 2);
@@ -585,6 +586,14 @@ class WCSU_Page_Cache {
      * Get cache statistics
      */
     public function get_cache_stats() {
+        // Make sure cache_dir is always set
+        if (empty($this->cache_dir)) {
+            $this->cache_dir = WP_CONTENT_DIR . '/cache/wcsu-page-cache/';
+        }
+
+        // Always try to create the directory when checking stats
+        $this->ensure_cache_dir();
+
         $stats = array(
             'enabled' => $this->enabled,
             'cache_dir' => $this->cache_dir,
@@ -593,39 +602,78 @@ class WCSU_Page_Cache {
             'total_size' => 0,
             'oldest_file' => null,
             'newest_file' => null,
+            'dir_exists' => is_dir($this->cache_dir),
+            'dir_writable' => is_writable($this->cache_dir),
         );
+
+        $stats['total_size_formatted'] = '0 B';
 
         if (!is_dir($this->cache_dir)) {
             return $stats;
         }
 
-        $iterator = new RecursiveIteratorIterator(
-            new RecursiveDirectoryIterator($this->cache_dir, RecursiveDirectoryIterator::SKIP_DOTS)
-        );
+        try {
+            $iterator = new RecursiveIteratorIterator(
+                new RecursiveDirectoryIterator($this->cache_dir, RecursiveDirectoryIterator::SKIP_DOTS)
+            );
 
-        $oldest_time = PHP_INT_MAX;
-        $newest_time = 0;
+            $oldest_time = PHP_INT_MAX;
+            $newest_time = 0;
 
-        foreach ($iterator as $file) {
-            if ($file->isFile() && $file->getExtension() === 'html') {
-                $stats['total_files']++;
-                $stats['total_size'] += $file->getSize();
+            foreach ($iterator as $file) {
+                if ($file->isFile() && $file->getExtension() === 'html') {
+                    $stats['total_files']++;
+                    $stats['total_size'] += $file->getSize();
 
-                $mtime = $file->getMTime();
-                if ($mtime < $oldest_time) {
-                    $oldest_time = $mtime;
-                    $stats['oldest_file'] = date('Y-m-d H:i:s', $mtime);
-                }
-                if ($mtime > $newest_time) {
-                    $newest_time = $mtime;
-                    $stats['newest_file'] = date('Y-m-d H:i:s', $mtime);
+                    $mtime = $file->getMTime();
+                    if ($mtime < $oldest_time) {
+                        $oldest_time = $mtime;
+                        $stats['oldest_file'] = date('Y-m-d H:i:s', $mtime);
+                    }
+                    if ($mtime > $newest_time) {
+                        $newest_time = $mtime;
+                        $stats['newest_file'] = date('Y-m-d H:i:s', $mtime);
+                    }
                 }
             }
+
+            $stats['total_size_formatted'] = size_format($stats['total_size']);
+        } catch (Exception $e) {
+            // Directory iteration failed
+            $stats['error'] = $e->getMessage();
         }
 
-        $stats['total_size_formatted'] = size_format($stats['total_size']);
-
         return $stats;
+    }
+
+    /**
+     * Test if caching is working by creating a test file
+     */
+    public function test_cache_write() {
+        $this->ensure_cache_dir();
+
+        if (!is_dir($this->cache_dir)) {
+            return array('success' => false, 'message' => 'Cache directory does not exist and could not be created');
+        }
+
+        if (!is_writable($this->cache_dir)) {
+            return array('success' => false, 'message' => 'Cache directory is not writable');
+        }
+
+        // Try to write a test file
+        $test_file = $this->cache_dir . 'test_' . time() . '.html';
+        $test_content = '<!-- WCSU Cache Test -->';
+
+        $result = @file_put_contents($test_file, $test_content, LOCK_EX);
+
+        if ($result === false) {
+            return array('success' => false, 'message' => 'Could not write test file to cache directory');
+        }
+
+        // Clean up test file
+        @unlink($test_file);
+
+        return array('success' => true, 'message' => 'Cache directory is working correctly');
     }
 
     /**
@@ -691,5 +739,24 @@ class WCSU_Page_Cache {
 
         $stats = $this->get_cache_stats();
         wp_send_json_success($stats);
+    }
+
+    /**
+     * AJAX: Test page cache functionality
+     */
+    public function ajax_test_cache() {
+        check_ajax_referer('wcsu_nonce', 'nonce');
+
+        if (!current_user_can('manage_options')) {
+            wp_send_json_error(__('Permission denied', 'wc-speedup'));
+        }
+
+        $result = $this->test_cache_write();
+
+        if ($result['success']) {
+            wp_send_json_success($result['message']);
+        } else {
+            wp_send_json_error($result['message']);
+        }
     }
 }
