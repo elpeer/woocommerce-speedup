@@ -590,7 +590,7 @@ class WCSU_Page_Cache {
 
     /**
      * Check if page contains personal data that shouldn't be cached
-     * Checks for cart items and wishlist items
+     * Only checks for actual cart items - wishlist is handled via JavaScript
      */
     private function contains_personal_cart_data($buffer) {
         // Only check for actual cart items in mini-cart
@@ -602,21 +602,10 @@ class WCSU_Page_Cache {
             }
         }
 
-        // Check for wishlist items with "added" state
-        // Common patterns for wishlist plugins showing item is in wishlist
-        $wishlist_patterns = array(
-            'wishlist-added',
-            'in-wishlist',
-            'added-to-wishlist',
-            'el-wishlist-added',
-            'yith-wcwl-add-to-wishlist-added',
-        );
-
-        foreach ($wishlist_patterns as $pattern) {
-            if (strpos($buffer, $pattern) !== false) {
-                return true;
-            }
-        }
+        // NOTE: We don't check for wishlist "added" state in HTML because:
+        // 1. Wishlist plugins use JavaScript to update button states
+        // 2. The JS reads from cookies/localStorage and updates all buttons
+        // 3. So cached HTML works correctly - JS fixes the state after load
 
         return false;
     }
