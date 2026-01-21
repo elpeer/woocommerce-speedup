@@ -408,9 +408,17 @@ class WCSU_Page_Cache {
         $cache_file = $this->get_cache_file_path();
         $cache_dir = dirname($cache_file);
 
-        // Create directory if needed
+        // Create directory if needed (with proper permissions)
         if (!file_exists($cache_dir)) {
-            wp_mkdir_p($cache_dir);
+            if (!wp_mkdir_p($cache_dir)) {
+                // Failed to create directory, skip caching
+                return $buffer;
+            }
+        }
+
+        // Verify directory is writable
+        if (!is_writable($cache_dir)) {
+            return $buffer;
         }
 
         // Add cache timestamp comment to the HTML
@@ -419,7 +427,12 @@ class WCSU_Page_Cache {
         $buffer = str_replace('</html>', $cache_comment . '</html>', $buffer);
 
         // Save to cache file
-        file_put_contents($cache_file, $buffer, LOCK_EX);
+        $saved = @file_put_contents($cache_file, $buffer, LOCK_EX);
+
+        // If save failed, don't add cache header
+        if ($saved === false) {
+            return $buffer;
+        }
 
         // Add miss header
         if (!headers_sent()) {
@@ -431,24 +444,16 @@ class WCSU_Page_Cache {
 
     /**
      * Check if page contains personal cart data that shouldn't be cached
+     * Only checks for actual cart items, not empty cart widgets
      */
     private function contains_personal_cart_data($buffer) {
-        // Look for WooCommerce cart with items (not empty cart)
-        // The mini-cart usually has class "woocommerce-mini-cart" or similar
-
-        // Check for cart count greater than 0
-        if (preg_match('/class="[^"]*cart-contents[^"]*"[^>]*>.*?<span[^>]*class="[^"]*count[^"]*"[^>]*>\s*([1-9]\d*)\s*<\/span>/is', $buffer)) {
-            return true;
-        }
-
-        // Check for non-empty mini-cart items
-        if (preg_match('/class="[^"]*woocommerce-mini-cart[^"]*"[^>]*>.*?<li[^>]*class="[^"]*mini_cart_item/is', $buffer)) {
-            return true;
-        }
-
-        // Check for cart total (only if it shows actual amount, not empty)
-        if (preg_match('/class="[^"]*cart-subtotal[^"]*"[^>]*>.*?<span[^>]*class="[^"]*woocommerce-Price-amount[^"]*"[^>]*>[^<]*[1-9]/is', $buffer)) {
-            return true;
+        // Only check for actual cart items in mini-cart
+        // Look for mini_cart_item class which only appears when there are items
+        if (strpos($buffer, 'mini_cart_item') !== false) {
+            // Double check it's actually a cart item, not just text
+            if (preg_match('/<li[^>]*class="[^"]*mini_cart_item[^"]*"/i', $buffer)) {
+                return true;
+            }
         }
 
         return false;
