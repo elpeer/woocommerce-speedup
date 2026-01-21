@@ -1153,11 +1153,28 @@ class WCSU_Admin {
 
         // Sanitize new options
         $sanitized = array();
+
+        // Text/textarea fields that need special handling
+        $text_fields = array(
+            'page_cache_exclude',
+            'dns_custom_domains',
+        );
+
+        // Select/string fields
+        $string_fields = array(
+            'cart_fragments_mode',
+            'heartbeat_frontend',
+            'heartbeat_admin',
+            'heartbeat_editor',
+        );
+
         foreach ($options as $key => $value) {
             $key = sanitize_key($key);
-            // Handle text fields (like page_cache_exclude)
-            if ($key === 'page_cache_exclude') {
+
+            if (in_array($key, $text_fields)) {
                 $sanitized[$key] = sanitize_textarea_field($value);
+            } elseif (in_array($key, $string_fields)) {
+                $sanitized[$key] = sanitize_text_field($value);
             } elseif ($key === 'page_cache_ttl') {
                 $sanitized[$key] = max(300, intval($value)); // Minimum 5 minutes
             } else {
@@ -1935,29 +1952,29 @@ class WCSU_Admin {
                 var data = {
                     action: 'wcsu_save_options',
                     nonce: wcsu_vars.nonce,
-                    enable_cart_fragments_optimizer: $('#enable_cart_fragments_optimizer').is(':checked') ? 1 : 0,
-                    cart_fragments_mode: $('#cart_fragments_mode').val(),
-                    enable_heartbeat_control: $('#enable_heartbeat_control').is(':checked') ? 1 : 0,
-                    heartbeat_frontend: $('#heartbeat_frontend').val(),
-                    heartbeat_admin: $('#heartbeat_admin').val(),
-                    heartbeat_editor: $('#heartbeat_editor').val(),
-                    enable_sessions_cleanup: $('#enable_sessions_cleanup').is(':checked') ? 1 : 0,
-                    sessions_auto_cleanup: $('#sessions_auto_cleanup').is(':checked') ? 1 : 0,
-                    sessions_cleanup_age: $('#sessions_cleanup_age').val(),
-                    enable_transients_cleanup: $('#enable_transients_cleanup').is(':checked') ? 1 : 0,
-                    transients_auto_cleanup: $('#transients_auto_cleanup').is(':checked') ? 1 : 0,
-                    enable_lazy_loading: $('#enable_lazy_loading').is(':checked') ? 1 : 0,
-                    lazy_images: $('#lazy_images').is(':checked') ? 1 : 0,
-                    lazy_iframes: $('#lazy_iframes').is(':checked') ? 1 : 0,
-                    lazy_exclude_above_fold: $('#lazy_exclude_above_fold').is(':checked') ? 1 : 0,
-                    enable_dns_prefetch: $('#enable_dns_prefetch').is(':checked') ? 1 : 0,
-                    dns_auto_detect: $('#dns_auto_detect').is(':checked') ? 1 : 0,
-                    dns_custom_domains: $('#dns_custom_domains').val(),
-                    enable_browser_caching: $('#enable_browser_caching').is(':checked') ? 1 : 0,
-                    browser_cache_css_js: $('#browser_cache_css_js').val(),
-                    browser_cache_images: $('#browser_cache_images').val(),
-                    enable_email_queue: $('#enable_email_queue').is(':checked') ? 1 : 0,
-                    email_queue_batch_size: $('#email_queue_batch_size').val()
+                    'options[enable_cart_fragments_optimizer]': $('#enable_cart_fragments_optimizer').is(':checked') ? 1 : 0,
+                    'options[cart_fragments_mode]': $('#cart_fragments_mode').val(),
+                    'options[enable_heartbeat_control]': $('#enable_heartbeat_control').is(':checked') ? 1 : 0,
+                    'options[heartbeat_frontend]': $('#heartbeat_frontend').val(),
+                    'options[heartbeat_admin]': $('#heartbeat_admin').val(),
+                    'options[heartbeat_editor]': $('#heartbeat_editor').val(),
+                    'options[enable_sessions_cleanup]': $('#enable_sessions_cleanup').is(':checked') ? 1 : 0,
+                    'options[sessions_auto_cleanup]': $('#sessions_auto_cleanup').is(':checked') ? 1 : 0,
+                    'options[sessions_cleanup_age]': $('#sessions_cleanup_age').val(),
+                    'options[enable_transients_cleanup]': $('#enable_transients_cleanup').is(':checked') ? 1 : 0,
+                    'options[transients_auto_cleanup]': $('#transients_auto_cleanup').is(':checked') ? 1 : 0,
+                    'options[enable_lazy_loading]': $('#enable_lazy_loading').is(':checked') ? 1 : 0,
+                    'options[lazy_images]': $('#lazy_images').is(':checked') ? 1 : 0,
+                    'options[lazy_iframes]': $('#lazy_iframes').is(':checked') ? 1 : 0,
+                    'options[lazy_exclude_above_fold]': $('#lazy_exclude_above_fold').is(':checked') ? 1 : 0,
+                    'options[enable_dns_prefetch]': $('#enable_dns_prefetch').is(':checked') ? 1 : 0,
+                    'options[dns_auto_detect]': $('#dns_auto_detect').is(':checked') ? 1 : 0,
+                    'options[dns_custom_domains]': $('#dns_custom_domains').val(),
+                    'options[enable_browser_caching]': $('#enable_browser_caching').is(':checked') ? 1 : 0,
+                    'options[browser_cache_css_js]': $('#browser_cache_css_js').val(),
+                    'options[browser_cache_images]': $('#browser_cache_images').val(),
+                    'options[enable_email_queue]': $('#enable_email_queue').is(':checked') ? 1 : 0,
+                    'options[email_queue_batch_size]': $('#email_queue_batch_size').val()
                 };
 
                 $.post(wcsu_vars.ajax_url, data, function(response) {
