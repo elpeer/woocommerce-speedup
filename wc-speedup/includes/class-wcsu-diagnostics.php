@@ -522,14 +522,23 @@ class WCSU_Diagnostics {
             }
         }
 
-        $has_cache = $found_cache_plugin !== __('None detected', 'wc-speedup');
+        // Check for our built-in page cache
+        $options = get_option('wcsu_options', array());
+        $builtin_cache_enabled = !empty($options['enable_page_cache']);
+
+        $has_cache = $found_cache_plugin !== __('None detected', 'wc-speedup') || $builtin_cache_enabled;
+
+        if ($builtin_cache_enabled && $found_cache_plugin === __('None detected', 'wc-speedup')) {
+            $found_cache_plugin = __('WC SpeedUp Page Cache', 'wc-speedup');
+        }
+
         $checks['page_cache'] = array(
-            'label' => __('Page Caching Plugin', 'wc-speedup'),
+            'label' => __('Page Caching', 'wc-speedup'),
             'value' => $found_cache_plugin,
             'status' => $has_cache ? 'good' : 'bad',
             'message' => $has_cache
                 ? __('Page caching is active', 'wc-speedup')
-                : __('Install a caching plugin!', 'wc-speedup')
+                : __('Enable page cache in WC SpeedUp settings!', 'wc-speedup')
         );
 
         // Check for CDN headers

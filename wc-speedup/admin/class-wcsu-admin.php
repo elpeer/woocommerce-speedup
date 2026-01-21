@@ -78,6 +78,15 @@ class WCSU_Admin {
             'wc-speedup-profiler',
             array($this, 'render_profiler')
         );
+
+        add_submenu_page(
+            'wc-speedup',
+            __('Page Cache', 'wc-speedup'),
+            __('Page Cache', 'wc-speedup'),
+            'manage_options',
+            'wc-speedup-page-cache',
+            array($this, 'render_page_cache')
+        );
     }
 
     /**
@@ -1090,14 +1099,329 @@ class WCSU_Admin {
 
         $options = isset($_POST['options']) ? $_POST['options'] : array();
 
-        // Sanitize options
-        $sanitized = array();
-        foreach ($options as $key => $value) {
-            $sanitized[sanitize_key($key)] = absint($value);
+        // Handle clear query log
+        if (!empty($options['clear_query_log'])) {
+            delete_option('wcsu_query_log');
+            wp_send_json_success(__('Query log cleared', 'wc-speedup'));
+            return;
         }
 
-        update_option('wcsu_options', $sanitized);
+        // Get existing options and merge
+        $existing = get_option('wcsu_options', array());
+
+        // Sanitize new options
+        $sanitized = array();
+        foreach ($options as $key => $value) {
+            $key = sanitize_key($key);
+            // Handle text fields (like page_cache_exclude)
+            if ($key === 'page_cache_exclude') {
+                $sanitized[$key] = sanitize_textarea_field($value);
+            } elseif ($key === 'page_cache_ttl') {
+                $sanitized[$key] = max(300, intval($value)); // Minimum 5 minutes
+            } else {
+                $sanitized[$key] = absint($value);
+            }
+        }
+
+        // Merge with existing options
+        $merged = array_merge($existing, $sanitized);
+        update_option('wcsu_options', $merged);
 
         wp_send_json_success(__('Settings saved', 'wc-speedup'));
+    }
+
+    /**
+     * Render page cache settings page
+     */
+    public function render_page_cache() {
+        $options = get_option('wcsu_options', array());
+        $page_cache_stats = wcsu()->page_cache->get_cache_stats();
+        $is_writable = wcsu()->page_cache->is_cache_writable();
+
+        ?>
+        <div class="wrap wcsu-wrap">
+            <h1><?php _e('Page Cache - WooCommerce Optimized', 'wc-speedup'); ?></h1>
+
+            <p class="wcsu-intro">
+                <?php _e('Page caching stores complete HTML pages to serve visitors without running database queries. This dramatically speeds up page loads for non-logged-in users.', 'wc-speedup'); ?>
+            </p>
+
+            <!-- Cache Status -->
+            <div class="wcsu-page-cache-status">
+                <div class="wcsu-status-header">
+                    <h2>
+                        <?php if (!empty($options['enable_page_cache'])): ?>
+                            <span class="dashicons dashicons-yes-alt" style="color:#28a745;"></span>
+                            <?php _e('Page Cache is Active', 'wc-speedup'); ?>
+                        <?php else: ?>
+                            <span class="dashicons dashicons-dismiss" style="color:#dc3545;"></span>
+                            <?php _e('Page Cache is Disabled', 'wc-speedup'); ?>
+                        <?php endif; ?>
+                    </h2>
+                </div>
+
+                <?php if (!$is_writable): ?>
+                <div class="wcsu-alert wcsu-alert-danger">
+                    <strong><?php _e('Error:', 'wc-speedup'); ?></strong>
+                    <?php _e('Cache directory is not writable. Please check file permissions for wp-content/cache/', 'wc-speedup'); ?>
+                </div>
+                <?php endif; ?>
+
+                <!-- Cache Statistics -->
+                <div class="wcsu-db-overview">
+                    <div class="wcsu-db-stat">
+                        <span class="wcsu-db-stat-value"><?php echo number_format($page_cache_stats['total_files']); ?></span>
+                        <span class="wcsu-db-stat-label"><?php _e('Cached Pages', 'wc-speedup'); ?></span>
+                    </div>
+                    <div class="wcsu-db-stat">
+                        <span class="wcsu-db-stat-value"><?php echo $page_cache_stats['total_size_formatted']; ?></span>
+                        <span class="wcsu-db-stat-label"><?php _e('Cache Size', 'wc-speedup'); ?></span>
+                    </div>
+                    <div class="wcsu-db-stat">
+                        <span class="wcsu-db-stat-value"><?php echo isset($options['page_cache_ttl']) ? ($options['page_cache_ttl'] / 60) . 'm' : '60m'; ?></span>
+                        <span class="wcsu-db-stat-label"><?php _e('Cache Lifetime', 'wc-speedup'); ?></span>
+                    </div>
+                </div>
+
+                <?php if ($page_cache_stats['newest_file']): ?>
+                <p class="wcsu-cache-info">
+                    <?php printf(__('Latest cached page: %s', 'wc-speedup'), $page_cache_stats['newest_file']); ?>
+                </p>
+                <?php endif; ?>
+            </div>
+
+            <!-- Enable/Disable Toggle -->
+            <div class="wcsu-settings-section">
+                <h2><?php _e('Enable Page Cache', 'wc-speedup'); ?></h2>
+
+                <table class="form-table">
+                    <tr>
+                        <th scope="row"><?php _e('Page Cache', 'wc-speedup'); ?></th>
+                        <td>
+                            <label class="wcsu-toggle">
+                                <input type="checkbox" id="wcsu-page-cache-toggle" name="enable_page_cache" value="1" <?php checked(!empty($options['enable_page_cache'])); ?>>
+                                <span class="wcsu-toggle-slider"></span>
+                            </label>
+                            <span class="wcsu-toggle-label">
+                                <?php _e('Enable page caching for non-logged-in visitors', 'wc-speedup'); ?>
+                            </span>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+
+            <!-- WooCommerce Smart Exclusions -->
+            <div class="wcsu-settings-section">
+                <h2><?php _e('WooCommerce Smart Exclusions', 'wc-speedup'); ?></h2>
+                <p class="description">
+                    <?php _e('The following pages are automatically excluded from caching to ensure WooCommerce works correctly:', 'wc-speedup'); ?>
+                </p>
+
+                <div class="wcsu-exclusions-list">
+                    <div class="wcsu-exclusion-item">
+                        <span class="dashicons dashicons-yes"></span>
+                        <strong><?php _e('Cart Page', 'wc-speedup'); ?></strong> - <?php _e('Dynamic cart contents', 'wc-speedup'); ?>
+                    </div>
+                    <div class="wcsu-exclusion-item">
+                        <span class="dashicons dashicons-yes"></span>
+                        <strong><?php _e('Checkout Page', 'wc-speedup'); ?></strong> - <?php _e('Order processing', 'wc-speedup'); ?>
+                    </div>
+                    <div class="wcsu-exclusion-item">
+                        <span class="dashicons dashicons-yes"></span>
+                        <strong><?php _e('My Account', 'wc-speedup'); ?></strong> - <?php _e('User-specific content', 'wc-speedup'); ?>
+                    </div>
+                    <div class="wcsu-exclusion-item">
+                        <span class="dashicons dashicons-yes"></span>
+                        <strong><?php _e('Logged-in Users', 'wc-speedup'); ?></strong> - <?php _e('Personalized experience', 'wc-speedup'); ?>
+                    </div>
+                    <div class="wcsu-exclusion-item">
+                        <span class="dashicons dashicons-yes"></span>
+                        <strong><?php _e('Users with Cart Items', 'wc-speedup'); ?></strong> - <?php _e('Cart data preserved', 'wc-speedup'); ?>
+                    </div>
+                    <div class="wcsu-exclusion-item">
+                        <span class="dashicons dashicons-yes"></span>
+                        <strong><?php _e('POST Requests', 'wc-speedup'); ?></strong> - <?php _e('Form submissions', 'wc-speedup'); ?>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Cache Settings -->
+            <div class="wcsu-settings-section">
+                <h2><?php _e('Cache Settings', 'wc-speedup'); ?></h2>
+
+                <form id="wcsu-page-cache-settings-form">
+                    <table class="form-table">
+                        <tr>
+                            <th scope="row"><?php _e('Cache Lifetime', 'wc-speedup'); ?></th>
+                            <td>
+                                <select name="page_cache_ttl" id="wcsu-cache-ttl">
+                                    <option value="1800" <?php selected(isset($options['page_cache_ttl']) ? $options['page_cache_ttl'] : 3600, 1800); ?>><?php _e('30 Minutes', 'wc-speedup'); ?></option>
+                                    <option value="3600" <?php selected(isset($options['page_cache_ttl']) ? $options['page_cache_ttl'] : 3600, 3600); ?>><?php _e('1 Hour (Recommended)', 'wc-speedup'); ?></option>
+                                    <option value="7200" <?php selected(isset($options['page_cache_ttl']) ? $options['page_cache_ttl'] : 3600, 7200); ?>><?php _e('2 Hours', 'wc-speedup'); ?></option>
+                                    <option value="21600" <?php selected(isset($options['page_cache_ttl']) ? $options['page_cache_ttl'] : 3600, 21600); ?>><?php _e('6 Hours', 'wc-speedup'); ?></option>
+                                    <option value="86400" <?php selected(isset($options['page_cache_ttl']) ? $options['page_cache_ttl'] : 3600, 86400); ?>><?php _e('24 Hours', 'wc-speedup'); ?></option>
+                                </select>
+                                <p class="description"><?php _e('How long to keep cached pages before regenerating them.', 'wc-speedup'); ?></p>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th scope="row"><?php _e('Additional Exclusions', 'wc-speedup'); ?></th>
+                            <td>
+                                <textarea name="page_cache_exclude" id="wcsu-cache-exclude" rows="5" class="large-text code"><?php echo esc_textarea(isset($options['page_cache_exclude']) ? $options['page_cache_exclude'] : ''); ?></textarea>
+                                <p class="description">
+                                    <?php _e('Enter URL patterns to exclude from caching, one per line. Supports wildcards (*).', 'wc-speedup'); ?><br>
+                                    <?php _e('Examples: /product/*, /category/sale/, /custom-page/', 'wc-speedup'); ?>
+                                </p>
+                            </td>
+                        </tr>
+                    </table>
+
+                    <p class="submit">
+                        <button type="submit" class="button button-primary" id="wcsu-save-cache-settings">
+                            <?php _e('Save Settings', 'wc-speedup'); ?>
+                        </button>
+                    </p>
+                </form>
+            </div>
+
+            <!-- Cache Actions -->
+            <div class="wcsu-settings-section">
+                <h2><?php _e('Cache Actions', 'wc-speedup'); ?></h2>
+
+                <p>
+                    <button class="button button-secondary" id="wcsu-clear-page-cache">
+                        <span class="dashicons dashicons-trash"></span>
+                        <?php _e('Clear All Page Cache', 'wc-speedup'); ?>
+                    </button>
+                </p>
+
+                <p class="description">
+                    <?php _e('Cache is automatically cleared when you update posts, products, or change themes.', 'wc-speedup'); ?>
+                </p>
+            </div>
+
+            <!-- How It Works -->
+            <div class="wcsu-settings-section wcsu-info-section">
+                <h2><?php _e('How Page Cache Works', 'wc-speedup'); ?></h2>
+
+                <div class="wcsu-how-it-works">
+                    <div class="wcsu-step">
+                        <span class="wcsu-step-number">1</span>
+                        <div class="wcsu-step-content">
+                            <strong><?php _e('First Visit', 'wc-speedup'); ?></strong>
+                            <p><?php _e('WordPress generates the page normally and saves the HTML to a cache file.', 'wc-speedup'); ?></p>
+                        </div>
+                    </div>
+                    <div class="wcsu-step">
+                        <span class="wcsu-step-number">2</span>
+                        <div class="wcsu-step-content">
+                            <strong><?php _e('Subsequent Visits', 'wc-speedup'); ?></strong>
+                            <p><?php _e('The cached HTML is served directly - no database queries, no PHP processing.', 'wc-speedup'); ?></p>
+                        </div>
+                    </div>
+                    <div class="wcsu-step">
+                        <span class="wcsu-step-number">3</span>
+                        <div class="wcsu-step-content">
+                            <strong><?php _e('Auto-Refresh', 'wc-speedup'); ?></strong>
+                            <p><?php _e('Cache expires after the set lifetime and regenerates on the next visit.', 'wc-speedup'); ?></p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="wcsu-performance-note">
+                    <span class="dashicons dashicons-performance"></span>
+                    <strong><?php _e('Performance Impact:', 'wc-speedup'); ?></strong>
+                    <?php _e('Page cache can reduce page load times by 50-90% for non-logged-in visitors by eliminating database queries.', 'wc-speedup'); ?>
+                </div>
+            </div>
+
+        </div>
+
+        <script>
+        jQuery(document).ready(function($) {
+            // Toggle page cache
+            $('#wcsu-page-cache-toggle').on('change', function() {
+                var enabled = $(this).is(':checked') ? 1 : 0;
+
+                $.ajax({
+                    url: wcsu_vars.ajax_url,
+                    type: 'POST',
+                    data: {
+                        action: 'wcsu_toggle_page_cache',
+                        enable: enabled,
+                        nonce: wcsu_vars.nonce
+                    },
+                    success: function(response) {
+                        if (response.success) {
+                            WCSU_Admin.showToast(response.data, 'success');
+                            location.reload();
+                        } else {
+                            WCSU_Admin.showToast(response.data, 'error');
+                        }
+                    }
+                });
+            });
+
+            // Save cache settings
+            $('#wcsu-page-cache-settings-form').on('submit', function(e) {
+                e.preventDefault();
+
+                var options = {
+                    page_cache_ttl: $('#wcsu-cache-ttl').val(),
+                    page_cache_exclude: $('#wcsu-cache-exclude').val()
+                };
+
+                $.ajax({
+                    url: wcsu_vars.ajax_url,
+                    type: 'POST',
+                    data: {
+                        action: 'wcsu_save_options',
+                        options: options,
+                        nonce: wcsu_vars.nonce
+                    },
+                    success: function(response) {
+                        if (response.success) {
+                            WCSU_Admin.showToast(response.data, 'success');
+                        } else {
+                            WCSU_Admin.showToast(response.data, 'error');
+                        }
+                    }
+                });
+            });
+
+            // Clear page cache
+            $('#wcsu-clear-page-cache').on('click', function(e) {
+                e.preventDefault();
+
+                if (!confirm('<?php _e('Clear all cached pages?', 'wc-speedup'); ?>')) {
+                    return;
+                }
+
+                var $btn = $(this);
+                $btn.prop('disabled', true);
+
+                $.ajax({
+                    url: wcsu_vars.ajax_url,
+                    type: 'POST',
+                    data: {
+                        action: 'wcsu_clear_page_cache',
+                        nonce: wcsu_vars.nonce
+                    },
+                    success: function(response) {
+                        if (response.success) {
+                            WCSU_Admin.showToast(response.data, 'success');
+                            location.reload();
+                        } else {
+                            WCSU_Admin.showToast(response.data, 'error');
+                        }
+                    },
+                    complete: function() {
+                        $btn.prop('disabled', false);
+                    }
+                });
+            });
+        });
+        </script>
+        <?php
     }
 }

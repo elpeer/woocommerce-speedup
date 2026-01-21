@@ -511,30 +511,54 @@ class WCSU_Query_Profiler {
     }
 
     /**
-     * Add missing index
+     * Add missing index - with safe error handling
      */
     public function add_index($table, $index_name, $sql) {
         global $wpdb;
 
         // Verify the SQL is safe (only ALTER TABLE ADD INDEX)
         if (strpos($sql, 'ALTER TABLE') !== 0 || strpos($sql, 'ADD INDEX') === false) {
-            return false;
+            return array('success' => false, 'message' => __('Invalid SQL statement', 'wc-speedup'));
         }
 
-        // Verify table exists
-        $table_exists = $wpdb->get_var("SHOW TABLES LIKE '{$table}'");
+        // Sanitize table and index names
+        $table = preg_replace('/[^a-zA-Z0-9_]/', '', $table);
+        $index_name = preg_replace('/[^a-zA-Z0-9_]/', '', $index_name);
+
+        // Verify table exists using information_schema (safer method)
+        $table_exists = $wpdb->get_var($wpdb->prepare(
+            "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = %s AND table_name = %s",
+            DB_NAME,
+            $table
+        ));
+
         if (!$table_exists) {
-            return false;
+            return array('success' => false, 'message' => sprintf(__('Table %s does not exist', 'wc-speedup'), $table));
         }
 
-        // Check if index already exists
-        $index_exists = $wpdb->get_results("SHOW INDEX FROM {$table} WHERE Key_name = '{$index_name}'");
-        if (!empty($index_exists)) {
-            return true; // Already exists
+        // Check if index already exists using information_schema
+        $index_exists = $wpdb->get_var($wpdb->prepare(
+            "SELECT COUNT(*) FROM information_schema.statistics WHERE table_schema = %s AND table_name = %s AND index_name = %s",
+            DB_NAME,
+            $table,
+            $index_name
+        ));
+
+        if ($index_exists) {
+            return array('success' => true, 'message' => __('Index already exists', 'wc-speedup'));
         }
 
+        // Suppress errors and attempt to add the index
+        $wpdb->suppress_errors(true);
         $result = $wpdb->query($sql);
-        return $result !== false;
+        $last_error = $wpdb->last_error;
+        $wpdb->suppress_errors(false);
+
+        if ($result === false || !empty($last_error)) {
+            return array('success' => false, 'message' => sprintf(__('Failed to add index: %s', 'wc-speedup'), $last_error));
+        }
+
+        return array('success' => true, 'message' => __('Index added successfully', 'wc-speedup'));
     }
 
     /**
@@ -683,7 +707,7 @@ class WCSU_Query_Profiler {
 
         $table = isset($_POST['table']) ? sanitize_text_field($_POST['table']) : '';
         $index = isset($_POST['index']) ? sanitize_text_field($_POST['index']) : '';
-        $sql = isset($_POST['sql']) ? $_POST['sql'] : '';
+        $sql = isset($_POST['sql']) ? wp_unslash($_POST['sql']) : '';
 
         if (empty($table) || empty($index) || empty($sql)) {
             wp_send_json_error(__('Invalid parameters', 'wc-speedup'));
@@ -691,10 +715,10 @@ class WCSU_Query_Profiler {
 
         $result = $this->add_index($table, $index, $sql);
 
-        if ($result) {
-            wp_send_json_success(__('Index added successfully', 'wc-speedup'));
+        if ($result['success']) {
+            wp_send_json_success($result['message']);
         } else {
-            wp_send_json_error(__('Could not add index', 'wc-speedup'));
+            wp_send_json_error($result['message']);
         }
     }
 }
