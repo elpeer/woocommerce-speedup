@@ -109,6 +109,12 @@ class WCSU_Page_Cache {
             return false;
         }
 
+        // Check URL exclusions FIRST (before any cookie checks)
+        // This ensures /wp-json/, /wishlist, etc. are excluded early
+        if ($this->is_excluded_url_early()) {
+            return false;
+        }
+
         // Don't serve cache for logged-in users
         if ($this->is_user_logged_in_check()) {
             return false;
@@ -119,10 +125,10 @@ class WCSU_Page_Cache {
             return false;
         }
 
-        // Don't serve cache if user has wishlist items
-        if ($this->has_wishlist()) {
-            return false;
-        }
+        // NOTE: We don't check wishlist cookies here because:
+        // 1. Wishlist state is updated via JavaScript on page load
+        // 2. The cached HTML will work fine - JS updates the wishlist buttons
+        // 3. Checking wishlist cookies blocks caching for too many users
 
         return true;
     }
@@ -141,7 +147,49 @@ class WCSU_Page_Cache {
     }
 
     /**
-     * Check if user has WooCommerce cart items or wishlist
+     * Early URL exclusion check (before WordPress fully loads)
+     * Checks for paths that should NEVER be cached regardless of cookies
+     */
+    private function is_excluded_url_early() {
+        $uri = isset($_SERVER['REQUEST_URI']) ? $_SERVER['REQUEST_URI'] : '';
+
+        // Paths that should NEVER go through cache logic
+        $always_exclude = array(
+            '/wp-json/',
+            '/wp-json',
+            '/wp-admin',
+            '/wp-login',
+            '/wp-cron',
+            '/wc-api/',
+            '/cart',
+            '/checkout',
+            '/my-account',
+            '/wishlist',
+            '/my-wishlist',
+            '.js',
+            '.css',
+            '.png',
+            '.jpg',
+            '.jpeg',
+            '.gif',
+            '.svg',
+            '.woff',
+            '.woff2',
+            '.ttf',
+            '.eot',
+        );
+
+        foreach ($always_exclude as $pattern) {
+            if (strpos($uri, $pattern) !== false) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Check if user has WooCommerce cart items
      * This is CRITICAL to prevent personalized data from being cached and shown to other users
      */
     private function has_woocommerce_cart() {
@@ -205,6 +253,13 @@ class WCSU_Page_Cache {
             return false;
         }
 
+        // Check URL exclusions EARLY - before any cookie/user checks
+        // This ensures /wp-json/, static files, etc. are excluded immediately
+        if ($this->is_excluded_url_early()) {
+            $this->debug_log("SKIP: Excluded URL (early) - {$uri}");
+            return false;
+        }
+
         // Don't cache if user is logged in
         if (is_user_logged_in()) {
             $this->debug_log("SKIP: User logged in - {$uri}");
@@ -217,11 +272,10 @@ class WCSU_Page_Cache {
             return false;
         }
 
-        // Don't cache if user has wishlist items (prevents showing wrong wishlist state)
-        if ($this->has_wishlist()) {
-            $this->debug_log("SKIP: Has Wishlist - {$uri}");
-            return false;
-        }
+        // NOTE: We don't check wishlist cookies here because:
+        // 1. Wishlist state is updated via JavaScript on page load
+        // 2. The cached HTML will work fine - JS updates the wishlist buttons
+        // 3. Checking wishlist cookies blocks caching for too many users
 
         // Don't cache admin pages
         if (is_admin()) {
@@ -481,11 +535,7 @@ class WCSU_Page_Cache {
             return $buffer;
         }
 
-        // SAFETY CHECK: Double-check for wishlist
-        if ($this->has_wishlist()) {
-            $this->debug_log("SAVE SKIP: Has wishlist in save - {$uri}");
-            return $buffer;
-        }
+        // NOTE: We don't check wishlist cookies here - wishlist is handled via JS
 
         // SAFETY CHECK: Don't cache if page contains personalized cart data
         // Look for signs of cart content that shouldn't be cached
