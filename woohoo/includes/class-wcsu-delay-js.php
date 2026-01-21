@@ -151,23 +151,52 @@ class WCSU_Delay_JS {
      * Check if script should be delayed
      */
     private function should_delay_script($attributes, $content) {
-        // Don't delay inline scripts without src
-        if (strpos($attributes, 'src=') === false && !empty(trim($content))) {
-            // Check if inline script content matches delay patterns
-            foreach ($this->scripts_to_delay as $pattern) {
-                if (empty($pattern)) continue;
-                if (stripos($content, $pattern) !== false) {
-                    return true;
+        // Never delay critical WooCommerce/WordPress scripts
+        $never_delay = array(
+            'jquery',
+            'woocommerce',
+            'wc-',
+            'cart',
+            'checkout',
+            'add-to-cart',
+            'wp-includes',
+            'wp-content/plugins',
+            'wp-content/themes',
+        );
+
+        foreach ($never_delay as $safe) {
+            if (stripos($attributes, $safe) !== false) {
+                return false;
+            }
+            if (!empty($content) && stripos($content, $safe) !== false) {
+                return false;
+            }
+        }
+
+        // Only delay scripts with external src (not local)
+        if (strpos($attributes, 'src=') !== false) {
+            // Check if it's an external script
+            preg_match('/src=["\']([^"\']+)["\']/i', $attributes, $src_match);
+            if (isset($src_match[1])) {
+                $src = $src_match[1];
+                // Only delay if it matches delay patterns
+                foreach ($this->scripts_to_delay as $pattern) {
+                    if (empty($pattern)) continue;
+                    if (stripos($src, $pattern) !== false) {
+                        return true;
+                    }
                 }
             }
             return false;
         }
 
-        // Check src against delay patterns
-        foreach ($this->scripts_to_delay as $pattern) {
-            if (empty($pattern)) continue;
-            if (stripos($attributes, $pattern) !== false) {
-                return true;
+        // For inline scripts, check content against patterns
+        if (!empty(trim($content))) {
+            foreach ($this->scripts_to_delay as $pattern) {
+                if (empty($pattern)) continue;
+                if (stripos($content, $pattern) !== false) {
+                    return true;
+                }
             }
         }
 

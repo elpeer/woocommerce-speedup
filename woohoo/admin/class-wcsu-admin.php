@@ -2096,7 +2096,7 @@ class WCSU_Admin {
                             <span class="slider"></span>
                         </label>
                     </div>
-                    <p class="wcsu-module-desc"><?php _e('טעינה עצלה לתמונות ו-iframes לשיפור זמן טעינה ראשוני.', 'wc-speedup'); ?></p>
+                    <p class="wcsu-module-desc"><?php _e('טעינה עצלה לתמונות ו-iframes - נטען רק כשגוללים אליהן.', 'wc-speedup'); ?></p>
                     <div class="wcsu-module-options" style="<?php echo empty($options['enable_lazy_loading']) ? 'display:none;' : ''; ?>">
                         <div class="wcsu-option-row">
                             <label>
@@ -2111,10 +2111,13 @@ class WCSU_Admin {
                             </label>
                         </div>
                         <div class="wcsu-option-row">
-                            <label>
-                                <input type="checkbox" name="lazy_exclude_above_fold" id="lazy_exclude_above_fold" value="1" <?php checked(!isset($options['lazy_exclude_above_fold']) || !empty($options['lazy_exclude_above_fold'])); ?>>
-                                <?php _e('החרג תמונות מעל הקיפול', 'wc-speedup'); ?>
-                            </label>
+                            <label><?php _e('דלג על תמונות ראשונות (LCP):', 'wc-speedup'); ?></label>
+                            <select name="lazy_skip_first" id="lazy_skip_first">
+                                <option value="1" <?php selected(isset($options['lazy_skip_first']) ? $options['lazy_skip_first'] : 3, 1); ?>>1</option>
+                                <option value="2" <?php selected(isset($options['lazy_skip_first']) ? $options['lazy_skip_first'] : 3, 2); ?>>2</option>
+                                <option value="3" <?php selected(isset($options['lazy_skip_first']) ? $options['lazy_skip_first'] : 3, 3); ?>>3 (<?php _e('מומלץ', 'wc-speedup'); ?>)</option>
+                                <option value="5" <?php selected(isset($options['lazy_skip_first']) ? $options['lazy_skip_first'] : 3, 5); ?>>5</option>
+                            </select>
                         </div>
                     </div>
                 </div>
@@ -2345,35 +2348,6 @@ class WCSU_Admin {
                     </div>
                 </div>
 
-                <!-- Lazy Loading (Updated) -->
-                <div class="wcsu-module-card">
-                    <div class="wcsu-module-header">
-                        <h3><span class="dashicons dashicons-images-alt2"></span> <?php _e('Lazy Loading (משופר)', 'wc-speedup'); ?></h3>
-                        <label class="wcsu-toggle">
-                            <input type="checkbox" id="enable_lazy_loading" name="enable_lazy_loading" value="1" <?php checked(!empty($options['enable_lazy_loading'])); ?>>
-                            <span class="slider"></span>
-                        </label>
-                    </div>
-                    <p class="wcsu-module-desc"><?php _e('טעינה עצלה אמיתית של תמונות - נטען רק כשגוללים אליהן.', 'wc-speedup'); ?></p>
-                    <div class="wcsu-module-options" style="<?php echo empty($options['enable_lazy_loading']) ? 'display:none;' : ''; ?>">
-                        <div class="wcsu-option-row">
-                            <label><?php _e('דלג על תמונות ראשונות (above fold):', 'wc-speedup'); ?></label>
-                            <select name="lazy_load_skip_count" id="lazy_load_skip_count">
-                                <option value="1" <?php selected(isset($options['lazy_load_skip_count']) ? $options['lazy_load_skip_count'] : 3, 1); ?>>1</option>
-                                <option value="2" <?php selected(isset($options['lazy_load_skip_count']) ? $options['lazy_load_skip_count'] : 3, 2); ?>>2</option>
-                                <option value="3" <?php selected(isset($options['lazy_load_skip_count']) ? $options['lazy_load_skip_count'] : 3, 3); ?>>3 (<?php _e('מומלץ', 'wc-speedup'); ?>)</option>
-                                <option value="5" <?php selected(isset($options['lazy_load_skip_count']) ? $options['lazy_load_skip_count'] : 3, 5); ?>>5</option>
-                            </select>
-                        </div>
-                        <div class="wcsu-option-row">
-                            <label>
-                                <input type="checkbox" name="lazy_load_bg_images" value="1" <?php checked(!empty($options['lazy_load_bg_images'])); ?>>
-                                <?php _e('כלול background images', 'wc-speedup'); ?>
-                            </label>
-                        </div>
-                    </div>
-                </div>
-
             </div>
 
             <div class="wcsu-save-section">
@@ -2502,7 +2476,7 @@ class WCSU_Admin {
                     'options[enable_lazy_loading]': $('#enable_lazy_loading').is(':checked') ? 1 : 0,
                     'options[lazy_images]': $('#lazy_images').is(':checked') ? 1 : 0,
                     'options[lazy_iframes]': $('#lazy_iframes').is(':checked') ? 1 : 0,
-                    'options[lazy_exclude_above_fold]': $('#lazy_exclude_above_fold').is(':checked') ? 1 : 0,
+                    'options[lazy_skip_first]': $('#lazy_skip_first').val(),
                     'options[enable_dns_prefetch]': $('#enable_dns_prefetch').is(':checked') ? 1 : 0,
                     'options[dns_auto_detect]': $('#dns_auto_detect').is(':checked') ? 1 : 0,
                     'options[dns_custom_domains]': $('#dns_custom_domains').val(),
@@ -2527,10 +2501,7 @@ class WCSU_Admin {
                     'options[preload_featured_image]': $('input[name="preload_featured_image"]').is(':checked') ? 1 : 0,
                     'options[preload_logo]': $('input[name="preload_logo"]').is(':checked') ? 1 : 0,
                     'options[custom_preloads]': $('textarea[name="custom_preloads"]').val(),
-                    'options[preconnect_domains]': $('textarea[name="preconnect_domains"]').val(),
-                    // Updated lazy loading options
-                    'options[lazy_load_skip_count]': $('#lazy_load_skip_count').val(),
-                    'options[lazy_load_bg_images]': $('input[name="lazy_load_bg_images"]').is(':checked') ? 1 : 0
+                    'options[preconnect_domains]': $('textarea[name="preconnect_domains"]').val()
                 };
 
                 $.post(wcsu_vars.ajax_url, data, function(response) {

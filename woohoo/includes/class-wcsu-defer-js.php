@@ -128,9 +128,26 @@ class WCSU_Defer_JS {
             }
         }
 
+        // Never defer WooCommerce critical scripts
+        $wc_critical = array(
+            'wc-',
+            'woocommerce',
+            'cart',
+            'checkout',
+            'add-to-cart',
+            'selectWoo',
+            'select2',
+        );
+
+        foreach ($wc_critical as $wc_script) {
+            if (stripos($handle, $wc_script) !== false || stripos($src, $wc_script) !== false) {
+                return true;
+            }
+        }
+
         // Don't defer scripts from certain critical sources
         $critical_sources = array(
-            'recaptcha', // reCAPTCHA needs to load for forms
+            'recaptcha',
             'grecaptcha',
         );
 
