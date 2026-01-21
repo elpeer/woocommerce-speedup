@@ -183,8 +183,26 @@ class WCSU_Admin {
             <div class="wcsu-dashboard-header">
                 <div class="wcsu-header-left">
                     <div class="wcsu-logo-container">
-                        <?php if (file_exists(WCSU_PLUGIN_DIR . 'assets/images/woohoo-logo.png')): ?>
-                            <img src="<?php echo WCSU_PLUGIN_URL; ?>assets/images/woohoo-logo.png" alt="WooHoo" class="wcsu-logo-img">
+                        <?php
+                        // Check for logo file with various names
+                        $logo_files = array(
+                            'woohoo-logo.png', 'woohoo-logo.svg', 'woohoo-logo.jpg',
+                            'logo.png', 'logo.svg', 'logo.jpg',
+                            'WooHoo-logo.png', 'WooHoo-logo.svg',
+                            'woohoo_logo.png', 'woohoo_logo.svg'
+                        );
+                        $logo_found = false;
+                        $logo_url = '';
+                        foreach ($logo_files as $logo_file) {
+                            if (file_exists(WCSU_PLUGIN_DIR . 'assets/images/' . $logo_file)) {
+                                $logo_found = true;
+                                $logo_url = WCSU_PLUGIN_URL . 'assets/images/' . $logo_file;
+                                break;
+                            }
+                        }
+
+                        if ($logo_found): ?>
+                            <img src="<?php echo esc_url($logo_url); ?>" alt="WooHoo" class="wcsu-logo-img">
                         <?php else: ?>
                             <h1 class="wcsu-logo-text">
                                 <span class="woohoo-w">W</span><span class="woohoo-oo">oo</span><span class="woohoo-h">H</span><span class="woohoo-oo2">oo</span>
