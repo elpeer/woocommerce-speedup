@@ -46,6 +46,12 @@ class WCSU_Delay_JS {
         'hotjar',
         'clarity',
         'adoric',
+        'adoric-om',
+
+        // Accessibility widgets (load after interaction)
+        'accessible.vagas',
+        'nagich',
+        'accessibility-statement',
 
         // Social
         'twitter',
