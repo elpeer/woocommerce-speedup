@@ -34,20 +34,20 @@ class WCSU_Cache {
             $this->enable_gzip();
         }
 
-        // Minify HTML
-        if (!empty($options['minify_html']) && !is_admin()) {
-            add_action('template_redirect', array($this, 'start_html_minification'));
-        }
+        // Minify HTML - DISABLED (can break site)
+        // if (!empty($options['minify_html']) && !is_admin()) {
+        //     add_action('template_redirect', array($this, 'start_html_minification'));
+        // }
 
-        // Defer JavaScript
-        if (!empty($options['defer_js']) && !is_admin()) {
-            add_filter('script_loader_tag', array($this, 'defer_scripts'), 10, 3);
-        }
+        // Defer JavaScript - DISABLED (can break site)
+        // if (!empty($options['defer_js']) && !is_admin()) {
+        //     add_filter('script_loader_tag', array($this, 'defer_scripts'), 10, 3);
+        // }
 
-        // Async CSS
-        if (!empty($options['async_css']) && !is_admin()) {
-            add_filter('style_loader_tag', array($this, 'async_styles'), 10, 4);
-        }
+        // Async CSS - DISABLED (can break site)
+        // if (!empty($options['async_css']) && !is_admin()) {
+        //     add_filter('style_loader_tag', array($this, 'async_styles'), 10, 4);
+        // }
 
         // DNS Prefetch
         if (!empty($options['dns_prefetch'])) {

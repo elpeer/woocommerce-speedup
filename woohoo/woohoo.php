@@ -3,7 +3,7 @@
  * Plugin Name: WooHoo - WooCommerce Performance Optimizer
  * Plugin URI: https://github.com/elpeer/woocommerce-speedup
  * Description: WooCommerce, but faster. WooHoo! Your shop on espresso: faster browsing, smoother checkout.
- * Version: 1.1.1
+ * Version: 1.1.2
  * Author: ElPeer
  * Author URI: https://github.com/elpeer
  * Text Domain: woohoo
@@ -21,7 +21,7 @@ if (!defined('ABSPATH')) {
 }
 
 // Plugin constants
-define('WCSU_VERSION', '1.1.1');
+define('WCSU_VERSION', '1.1.2');
 define('WCSU_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('WCSU_PLUGIN_URL', plugin_dir_url(__FILE__));
 define('WCSU_PLUGIN_BASENAME', plugin_basename(__FILE__));
@@ -154,7 +154,7 @@ final class WC_SpeedUp {
         $this->heartbeat = new WCSU_Heartbeat();
         $this->sessions_cleanup = new WCSU_Sessions_Cleanup();
         $this->transients_cleanup = new WCSU_Transients_Cleanup();
-        $this->lazy_loading = new WCSU_Lazy_Loading();
+        // $this->lazy_loading = new WCSU_Lazy_Loading(); // TEMPORARILY DISABLED
         $this->dns_prefetch = new WCSU_DNS_Prefetch();
         $this->browser_caching = new WCSU_Browser_Caching();
         $this->email_queue = new WCSU_Email_Queue();
