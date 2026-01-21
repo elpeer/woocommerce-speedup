@@ -782,9 +782,42 @@ class WCSU_Admin {
      */
     public function render_profiler() {
         $options = get_option('wcsu_options', array());
-        $autoload_analysis = wcsu()->query_profiler->analyze_autoload();
-        $index_check = wcsu()->query_profiler->check_indexes();
-        $query_stats = wcsu()->query_profiler->get_query_stats();
+
+        // Safely get profiler data with error handling
+        try {
+            $autoload_analysis = wcsu()->query_profiler->analyze_autoload();
+        } catch (Exception $e) {
+            $autoload_analysis = array(
+                'total_size' => 0,
+                'total_count' => 0,
+                'large_options' => array(),
+                'by_plugin' => array(),
+                'recommendations' => array()
+            );
+        }
+
+        try {
+            $index_check = wcsu()->query_profiler->check_indexes();
+        } catch (Exception $e) {
+            $index_check = array(
+                'missing' => array(),
+                'recommendations' => array()
+            );
+        }
+
+        try {
+            $query_stats = wcsu()->query_profiler->get_query_stats();
+        } catch (Exception $e) {
+            $query_stats = null;
+        }
+
+        // Ensure arrays have required keys
+        if (!is_array($autoload_analysis)) {
+            $autoload_analysis = array('total_size' => 0, 'total_count' => 0, 'large_options' => array(), 'by_plugin' => array());
+        }
+        if (!is_array($index_check)) {
+            $index_check = array('missing' => array(), 'recommendations' => array());
+        }
 
         ?>
         <div class="wrap wcsu-wrap">

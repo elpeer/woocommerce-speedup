@@ -134,15 +134,26 @@ class WCSU_Page_Cache {
     }
 
     /**
-     * Check if user has WooCommerce cart items
+     * Check if user has WooCommerce session or cart items
+     * This is CRITICAL to prevent cart data from being cached and shown to other users
      */
     private function has_woocommerce_cart() {
-        // Check for WooCommerce cart cookie
+        // Check for ANY WooCommerce-related cookies
         foreach ($_COOKIE as $name => $value) {
+            // Cart items cookie
             if (strpos($name, 'woocommerce_items_in_cart') === 0 && $value !== '0') {
                 return true;
             }
+            // WooCommerce session cookie (guest or logged in)
             if (strpos($name, 'wp_woocommerce_session_') === 0) {
+                return true;
+            }
+            // WooCommerce cart hash
+            if (strpos($name, 'woocommerce_cart_hash') === 0 && !empty($value)) {
+                return true;
+            }
+            // Recently viewed products (might contain personal data)
+            if (strpos($name, 'woocommerce_recently_viewed') === 0) {
                 return true;
             }
         }
@@ -160,6 +171,11 @@ class WCSU_Page_Cache {
 
         // Don't cache if user is logged in
         if (is_user_logged_in()) {
+            return false;
+        }
+
+        // Don't cache if user has WooCommerce session/cart (CRITICAL for preventing cart leakage)
+        if ($this->has_woocommerce_cart()) {
             return false;
         }
 
@@ -383,6 +399,18 @@ class WCSU_Page_Cache {
             return $buffer;
         }
 
+        // SAFETY CHECK: Double-check for WooCommerce session cookies
+        // (in case something changed during page rendering)
+        if ($this->has_woocommerce_cart()) {
+            return $buffer;
+        }
+
+        // SAFETY CHECK: Don't cache if page contains personalized cart data
+        // Look for signs of cart content that shouldn't be cached
+        if ($this->contains_personal_cart_data($buffer)) {
+            return $buffer;
+        }
+
         // Get cache file path
         $cache_file = $this->get_cache_file_path();
         $cache_dir = dirname($cache_file);
@@ -406,6 +434,31 @@ class WCSU_Page_Cache {
         }
 
         return $buffer;
+    }
+
+    /**
+     * Check if page contains personal cart data that shouldn't be cached
+     */
+    private function contains_personal_cart_data($buffer) {
+        // Look for WooCommerce cart with items (not empty cart)
+        // The mini-cart usually has class "woocommerce-mini-cart" or similar
+
+        // Check for cart count greater than 0
+        if (preg_match('/class="[^"]*cart-contents[^"]*"[^>]*>.*?<span[^>]*class="[^"]*count[^"]*"[^>]*>\s*([1-9]\d*)\s*<\/span>/is', $buffer)) {
+            return true;
+        }
+
+        // Check for non-empty mini-cart items
+        if (preg_match('/class="[^"]*woocommerce-mini-cart[^"]*"[^>]*>.*?<li[^>]*class="[^"]*mini_cart_item/is', $buffer)) {
+            return true;
+        }
+
+        // Check for cart total (only if it shows actual amount, not empty)
+        if (preg_match('/class="[^"]*cart-subtotal[^"]*"[^>]*>.*?<span[^>]*class="[^"]*woocommerce-Price-amount[^"]*"[^>]*>[^<]*[1-9]/is', $buffer)) {
+            return true;
+        }
+
+        return false;
     }
 
     /**

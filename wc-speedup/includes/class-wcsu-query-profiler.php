@@ -400,50 +400,84 @@ class WCSU_Query_Profiler {
             'recommendations' => array()
         );
 
+        // Helper function to check if table exists
+        $table_exists = function($table) use ($wpdb) {
+            $result = $wpdb->get_var($wpdb->prepare(
+                "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = %s AND table_name = %s",
+                DB_NAME,
+                $table
+            ));
+            return $result > 0;
+        };
+
+        // Helper function to safely check index
+        $check_index = function($table, $index_name) use ($wpdb, $table_exists) {
+            if (!$table_exists($table)) {
+                return null; // Table doesn't exist
+            }
+            $wpdb->suppress_errors(true);
+            $result = $wpdb->get_results($wpdb->prepare(
+                "SELECT COUNT(*) as cnt FROM information_schema.statistics WHERE table_schema = %s AND table_name = %s AND index_name = %s",
+                DB_NAME,
+                $table,
+                $index_name
+            ));
+            $wpdb->suppress_errors(false);
+            return !empty($result) && $result[0]->cnt > 0;
+        };
+
         // Check postmeta index
-        $postmeta_index = $wpdb->get_results("SHOW INDEX FROM {$wpdb->postmeta} WHERE Key_name = 'meta_value'");
-        if (empty($postmeta_index)) {
-            $results['missing'][] = array(
-                'table' => $wpdb->postmeta,
-                'index' => 'meta_value',
-                'reason' => __('Speeds up queries filtering by meta_value', 'wc-speedup'),
-                'sql' => "ALTER TABLE {$wpdb->postmeta} ADD INDEX meta_value (meta_value(191))"
-            );
+        if ($table_exists($wpdb->postmeta)) {
+            $has_index = $check_index($wpdb->postmeta, 'meta_value');
+            if ($has_index === false) {
+                $results['missing'][] = array(
+                    'table' => $wpdb->postmeta,
+                    'index' => 'meta_value',
+                    'reason' => __('Speeds up queries filtering by meta_value', 'wc-speedup'),
+                    'sql' => "ALTER TABLE {$wpdb->postmeta} ADD INDEX meta_value (meta_value(191))"
+                );
+            }
         }
 
         // Check options autoload index
-        $options_index = $wpdb->get_results("SHOW INDEX FROM {$wpdb->options} WHERE Key_name = 'autoload'");
-        if (empty($options_index)) {
-            $results['missing'][] = array(
-                'table' => $wpdb->options,
-                'index' => 'autoload',
-                'reason' => __('Speeds up loading autoloaded options', 'wc-speedup'),
-                'sql' => "ALTER TABLE {$wpdb->options} ADD INDEX autoload (autoload)"
-            );
-        }
-
-        // Check WooCommerce tables
-        if (class_exists('WooCommerce')) {
-            // Order items
-            $order_items_index = $wpdb->get_results("SHOW INDEX FROM {$wpdb->prefix}woocommerce_order_items WHERE Key_name = 'order_id'");
-            if (empty($order_items_index)) {
+        if ($table_exists($wpdb->options)) {
+            $has_index = $check_index($wpdb->options, 'autoload');
+            if ($has_index === false) {
                 $results['missing'][] = array(
-                    'table' => $wpdb->prefix . 'woocommerce_order_items',
-                    'index' => 'order_id',
-                    'reason' => __('Speeds up order item queries', 'wc-speedup'),
-                    'sql' => "ALTER TABLE {$wpdb->prefix}woocommerce_order_items ADD INDEX order_id (order_id)"
+                    'table' => $wpdb->options,
+                    'index' => 'autoload',
+                    'reason' => __('Speeds up loading autoloaded options', 'wc-speedup'),
+                    'sql' => "ALTER TABLE {$wpdb->options} ADD INDEX autoload (autoload)"
                 );
             }
+        }
 
-            // Order itemmeta
-            $order_itemmeta_index = $wpdb->get_results("SHOW INDEX FROM {$wpdb->prefix}woocommerce_order_itemmeta WHERE Key_name = 'meta_key'");
-            if (empty($order_itemmeta_index)) {
-                $results['missing'][] = array(
-                    'table' => $wpdb->prefix . 'woocommerce_order_itemmeta',
-                    'index' => 'meta_key',
-                    'reason' => __('Speeds up order item meta queries', 'wc-speedup'),
-                    'sql' => "ALTER TABLE {$wpdb->prefix}woocommerce_order_itemmeta ADD INDEX meta_key (meta_key(191))"
-                );
+        // Check WooCommerce tables (only if tables exist)
+        if (class_exists('WooCommerce')) {
+            $order_items_table = $wpdb->prefix . 'woocommerce_order_items';
+            if ($table_exists($order_items_table)) {
+                $has_index = $check_index($order_items_table, 'order_id');
+                if ($has_index === false) {
+                    $results['missing'][] = array(
+                        'table' => $order_items_table,
+                        'index' => 'order_id',
+                        'reason' => __('Speeds up order item queries', 'wc-speedup'),
+                        'sql' => "ALTER TABLE {$order_items_table} ADD INDEX order_id (order_id)"
+                    );
+                }
+            }
+
+            $order_itemmeta_table = $wpdb->prefix . 'woocommerce_order_itemmeta';
+            if ($table_exists($order_itemmeta_table)) {
+                $has_index = $check_index($order_itemmeta_table, 'meta_key');
+                if ($has_index === false) {
+                    $results['missing'][] = array(
+                        'table' => $order_itemmeta_table,
+                        'index' => 'meta_key',
+                        'reason' => __('Speeds up order item meta queries', 'wc-speedup'),
+                        'sql' => "ALTER TABLE {$order_itemmeta_table} ADD INDEX meta_key (meta_key(191))"
+                    );
+                }
             }
         }
 
@@ -464,12 +498,15 @@ class WCSU_Query_Profiler {
 
         $recommendations = array();
 
+        // Suppress errors for all queries in this function
+        $wpdb->suppress_errors(true);
+
         // Check for too many autoloaded transients
         $transient_count = $wpdb->get_var(
             "SELECT COUNT(*) FROM {$wpdb->options}
              WHERE autoload = 'yes' AND option_name LIKE '%_transient_%'"
         );
-        if ($transient_count > 100) {
+        if ($transient_count && $transient_count > 100) {
             $recommendations[] = array(
                 'type' => 'warning',
                 'message' => sprintf(
@@ -481,7 +518,7 @@ class WCSU_Query_Profiler {
 
         // Check for large postmeta table
         $postmeta_count = $wpdb->get_var("SELECT COUNT(*) FROM {$wpdb->postmeta}");
-        if ($postmeta_count > 500000) {
+        if ($postmeta_count && $postmeta_count > 500000) {
             $recommendations[] = array(
                 'type' => 'warning',
                 'message' => sprintf(
@@ -491,21 +528,30 @@ class WCSU_Query_Profiler {
             );
         }
 
-        // Check for WooCommerce sessions
+        // Check for WooCommerce sessions (only if table exists)
         if (class_exists('WooCommerce')) {
-            $session_count = $wpdb->get_var(
-                "SELECT COUNT(*) FROM {$wpdb->prefix}woocommerce_sessions"
-            );
-            if ($session_count > 10000) {
-                $recommendations[] = array(
-                    'type' => 'warning',
-                    'message' => sprintf(
-                        __('%s WooCommerce sessions stored - clean old sessions', 'wc-speedup'),
-                        number_format($session_count)
-                    )
-                );
+            $sessions_table = $wpdb->prefix . 'woocommerce_sessions';
+            $table_exists = $wpdb->get_var($wpdb->prepare(
+                "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = %s AND table_name = %s",
+                DB_NAME,
+                $sessions_table
+            ));
+
+            if ($table_exists) {
+                $session_count = $wpdb->get_var("SELECT COUNT(*) FROM {$sessions_table}");
+                if ($session_count && $session_count > 10000) {
+                    $recommendations[] = array(
+                        'type' => 'warning',
+                        'message' => sprintf(
+                            __('%s WooCommerce sessions stored - clean old sessions', 'wc-speedup'),
+                            number_format($session_count)
+                        )
+                    );
+                }
             }
         }
+
+        $wpdb->suppress_errors(false);
 
         return $recommendations;
     }
@@ -567,7 +613,7 @@ class WCSU_Query_Profiler {
     public function get_query_stats() {
         $log = get_option('wcsu_query_log', array());
 
-        if (empty($log)) {
+        if (empty($log) || !is_array($log)) {
             return null;
         }
 
@@ -585,21 +631,34 @@ class WCSU_Query_Profiler {
         $total_page_time = 0;
 
         foreach ($log as $entry) {
-            $total_queries += $entry['query_count'];
-            $total_query_time += $entry['query_time'];
-            $total_page_time += $entry['time'];
+            if (!is_array($entry)) {
+                continue;
+            }
 
-            // Track slow query sources
-            foreach ($entry['slow_queries'] as $slow) {
-                $source = $slow['caller']['plugin'] ?: $slow['caller']['type'];
-                if (!isset($stats['slow_query_sources'][$source])) {
-                    $stats['slow_query_sources'][$source] = array(
-                        'count' => 0,
-                        'total_time' => 0
-                    );
+            $total_queries += isset($entry['query_count']) ? $entry['query_count'] : 0;
+            $total_query_time += isset($entry['query_time']) ? $entry['query_time'] : 0;
+            $total_page_time += isset($entry['time']) ? $entry['time'] : 0;
+
+            // Track slow query sources (with proper checks)
+            if (isset($entry['slow_queries']) && is_array($entry['slow_queries'])) {
+                foreach ($entry['slow_queries'] as $slow) {
+                    if (!is_array($slow)) {
+                        continue;
+                    }
+                    $source = 'Unknown';
+                    if (isset($slow['caller']) && is_array($slow['caller'])) {
+                        $source = !empty($slow['caller']['plugin']) ? $slow['caller']['plugin'] :
+                                 (!empty($slow['caller']['type']) ? $slow['caller']['type'] : 'Unknown');
+                    }
+                    if (!isset($stats['slow_query_sources'][$source])) {
+                        $stats['slow_query_sources'][$source] = array(
+                            'count' => 0,
+                            'total_time' => 0
+                        );
+                    }
+                    $stats['slow_query_sources'][$source]['count']++;
+                    $stats['slow_query_sources'][$source]['total_time'] += isset($slow['time']) ? $slow['time'] : 0;
                 }
-                $stats['slow_query_sources'][$source]['count']++;
-                $stats['slow_query_sources'][$source]['total_time'] += $slow['time'];
             }
         }
 
