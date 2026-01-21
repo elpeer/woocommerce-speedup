@@ -524,7 +524,6 @@ class WCSU_Admin {
         :root {
             --woohoo-blue: #2B7FD4;
             --woohoo-orange: #F7941D;
-            --woohoo-gradient: linear-gradient(135deg, #2B7FD4 0%, #F7941D 100%);
         }
         .wcsu-dashboard-new { max-width: 1400px; }
 
@@ -533,41 +532,41 @@ class WCSU_Admin {
             justify-content: space-between;
             align-items: center;
             margin-bottom: 25px;
-            padding: 25px 30px;
-            background: var(--woohoo-gradient);
+            padding: 20px 30px;
+            background: #fff;
             border-radius: 12px;
-            color: #fff;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+            border-top: 4px solid var(--woohoo-blue);
         }
         .wcsu-logo-container { margin-bottom: 5px; }
-        .wcsu-logo-img { max-height: 50px; width: auto; }
+        .wcsu-logo-img { max-height: 60px; width: auto; }
         .wcsu-logo-text {
             font-size: 36px;
             font-weight: 800;
             margin: 0;
             font-family: 'Arial Black', sans-serif;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
         }
-        .woohoo-w { color: #fff; }
-        .woohoo-oo { color: #2B7FD4; }
-        .woohoo-h { color: #fff; }
-        .woohoo-oo2 { color: #F7941D; }
+        .woohoo-w { color: var(--woohoo-blue); }
+        .woohoo-oo { color: var(--woohoo-blue); }
+        .woohoo-h { color: var(--woohoo-orange); }
+        .woohoo-oo2 { color: var(--woohoo-orange); }
         .wcsu-tagline {
             margin: 5px 0 0;
             font-size: 14px;
             font-style: italic;
-            opacity: 0.95;
+            color: #666;
         }
         .wcsu-version {
             margin: 3px 0 0;
-            opacity: 0.7;
+            color: #999;
             font-size: 12px;
         }
         .wcsu-score-badge {
             text-align: center;
             padding: 15px 25px;
-            background: rgba(255,255,255,0.2);
+            background: var(--woohoo-blue);
             border-radius: 10px;
-            backdrop-filter: blur(5px);
+            color: #fff;
         }
         .wcsu-score-badge .wcsu-score-number {
             display: block;
@@ -580,9 +579,9 @@ class WCSU_Admin {
             opacity: 0.9;
             text-transform: uppercase;
         }
-        .wcsu-score-badge.score-good { background: rgba(70, 180, 80, 0.35); }
-        .wcsu-score-badge.score-warning { background: rgba(255, 180, 0, 0.35); }
-        .wcsu-score-badge.score-bad { background: rgba(220, 50, 50, 0.35); }
+        .wcsu-score-badge.score-good { background: #46b450; }
+        .wcsu-score-badge.score-warning { background: var(--woohoo-orange); }
+        .wcsu-score-badge.score-bad { background: #dc3545; }
 
         /* Cards Row */
         .wcsu-cards-row {

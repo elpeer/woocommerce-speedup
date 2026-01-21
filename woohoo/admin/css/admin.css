@@ -716,12 +716,12 @@
 
 /* One-Click Optimizer Section */
 .wcsu-one-click-optimizer {
-    background: var(--woohoo-gradient);
+    background: #fff;
     border-radius: 12px;
     padding: 30px;
     margin-bottom: 30px;
-    color: #fff;
-    box-shadow: 0 10px 40px rgba(43, 127, 212, 0.4);
+    box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+    border-left: 4px solid var(--woohoo-blue);
 }
 
 .wcsu-optimizer-header {
@@ -731,10 +731,10 @@
 }
 
 .wcsu-optimizer-icon {
-    width: 70px;
-    height: 70px;
-    background: rgba(255,255,255,0.2);
-    border-radius: 50%;
+    width: 60px;
+    height: 60px;
+    background: var(--woohoo-blue);
+    border-radius: 12px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -742,22 +742,23 @@
 }
 
 .wcsu-optimizer-icon .dashicons {
-    font-size: 36px;
-    width: 36px;
-    height: 36px;
+    font-size: 32px;
+    width: 32px;
+    height: 32px;
+    color: #fff;
 }
 
 .wcsu-optimizer-info h2 {
     margin: 0 0 8px;
-    color: #fff;
-    font-size: 1.6em;
+    color: #333;
+    font-size: 1.5em;
     border: none;
     padding: 0;
 }
 
 .wcsu-optimizer-info p {
     margin: 0;
-    opacity: 0.9;
+    color: #666;
     font-size: 14px;
 }
 
@@ -769,42 +770,46 @@
 }
 
 .wcsu-status-item {
-    background: rgba(255,255,255,0.25);
+    background: #f8f9fa;
     padding: 15px;
     border-radius: 8px;
     text-align: center;
+    border: 1px solid #e9ecef;
 }
 
 .wcsu-status-item.wcsu-status-good {
-    background: rgba(40, 167, 69, 0.5);
-    border: 1px solid rgba(40, 167, 69, 0.7);
+    background: #d4edda;
+    border: 1px solid #c3e6cb;
 }
 
 .wcsu-status-item.wcsu-status-warning {
-    background: rgba(255, 193, 7, 0.5);
-    border: 1px solid rgba(255, 193, 7, 0.7);
+    background: #fff3cd;
+    border: 1px solid #ffeeba;
 }
 
 .wcsu-status-item.wcsu-status-bad {
-    background: rgba(220, 53, 69, 0.5);
-    border: 1px solid rgba(220, 53, 69, 0.7);
+    background: #f8d7da;
+    border: 1px solid #f5c6cb;
 }
 
 .wcsu-status-label {
     display: block;
     font-size: 12px;
-    color: #fff;
-    text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+    color: #666;
     margin-bottom: 5px;
+    text-transform: uppercase;
 }
 
 .wcsu-status-value {
     display: block;
-    font-size: 22px;
+    font-size: 24px;
     font-weight: bold;
-    color: #fff;
-    text-shadow: 0 1px 3px rgba(0,0,0,0.3);
+    color: #333;
 }
+
+.wcsu-status-item.wcsu-status-good .wcsu-status-value { color: #155724; }
+.wcsu-status-item.wcsu-status-warning .wcsu-status-value { color: #856404; }
+.wcsu-status-item.wcsu-status-bad .wcsu-status-value { color: #721c24; }
 
 .wcsu-optimizer-actions {
     text-align: center;
@@ -814,31 +819,31 @@
     display: inline-flex;
     align-items: center;
     gap: 12px;
-    padding: 18px 40px;
-    font-size: 18px;
+    padding: 16px 35px;
+    font-size: 16px;
     font-weight: bold;
-    background: #fff;
-    color: var(--woohoo-blue);
+    background: var(--woohoo-blue);
+    color: #fff;
     border: none;
-    border-radius: 50px;
+    border-radius: 8px;
     cursor: pointer;
     transition: all 0.3s ease;
-    box-shadow: 0 5px 20px rgba(0,0,0,0.2);
+    box-shadow: 0 2px 8px rgba(43, 127, 212, 0.3);
 }
 
 .wcsu-big-button:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 30px rgba(0,0,0,0.3);
+    background: #2470c0;
+    box-shadow: 0 4px 12px rgba(43, 127, 212, 0.4);
 }
 
 .wcsu-big-button:active {
-    transform: translateY(0);
+    transform: translateY(1px);
 }
 
 .wcsu-big-button .dashicons {
-    font-size: 24px;
-    width: 24px;
-    height: 24px;
+    font-size: 20px;
+    width: 20px;
+    height: 20px;
 }
 
 .wcsu-big-button.loading {
@@ -849,26 +854,27 @@
 .wcsu-last-run {
     margin-top: 15px;
     font-size: 13px;
-    opacity: 0.8;
+    color: #888;
 }
 
 .wcsu-optimize-results {
     margin-top: 25px;
-    background: rgba(255,255,255,0.1);
+    background: #f8f9fa;
     border-radius: 8px;
     padding: 20px;
+    border: 1px solid #e9ecef;
 }
 
 .wcsu-optimize-results h4 {
     margin: 0 0 15px;
-    color: #fff;
+    color: #333;
 }
 
 .wcsu-result-item {
     display: flex;
     justify-content: space-between;
     padding: 10px 0;
-    border-bottom: 1px solid rgba(255,255,255,0.1);
+    border-bottom: 1px solid #e9ecef;
 }
 
 .wcsu-result-item:last-child {
@@ -877,10 +883,11 @@
 
 .wcsu-result-item .result-name {
     font-weight: 500;
+    color: #333;
 }
 
 .wcsu-result-item .result-value {
-    opacity: 0.9;
+    color: #666;
 }
 
 /* RTL for optimizer */
