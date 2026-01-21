@@ -153,12 +153,118 @@ class WCSU_Admin {
         $recommendations = wcsu()->diagnostics->get_recommendations();
         $cache_status = wcsu()->cache->get_cache_status();
         $optimizer_status = wcsu()->auto_optimizer->get_status();
+        $options = get_option('wcsu_options', array());
+
+        // Get page cache stats
+        $page_cache_stats = wcsu()->page_cache->get_cache_stats();
+
+        // Count active modules
+        $modules = array(
+            'enable_cart_fragments_optimizer' => 'Cart Fragments',
+            'enable_heartbeat_control' => 'Heartbeat Control',
+            'enable_sessions_cleanup' => 'Sessions Cleanup',
+            'enable_transients_cleanup' => 'Transients Cleanup',
+            'enable_lazy_loading' => 'Lazy Loading',
+            'enable_dns_prefetch' => 'DNS Prefetch',
+            'enable_browser_caching' => 'Browser Caching',
+            'enable_email_queue' => 'Email Queue',
+        );
+        $active_modules = 0;
+        foreach ($modules as $key => $label) {
+            if (!empty($options[$key])) {
+                $active_modules++;
+            }
+        }
 
         ?>
-        <div class="wrap wcsu-wrap">
-            <h1><?php _e('WC SpeedUp - Performance Dashboard', 'wc-speedup'); ?></h1>
+        <div class="wrap wcsu-wrap wcsu-dashboard-new">
 
-            <!-- ONE CLICK OPTIMIZER - Main Feature -->
+            <!-- Header with Score -->
+            <div class="wcsu-dashboard-header">
+                <div class="wcsu-header-left">
+                    <h1>
+                        <span class="dashicons dashicons-performance"></span>
+                        <?php _e('WC SpeedUp', 'wc-speedup'); ?>
+                    </h1>
+                    <p class="wcsu-version">v<?php echo WCSU_VERSION; ?></p>
+                </div>
+                <div class="wcsu-header-score">
+                    <div class="wcsu-score-badge <?php echo $this->get_score_class($diagnostics['overall_score']); ?>">
+                        <span class="wcsu-score-number"><?php echo $diagnostics['overall_score']; ?></span>
+                        <span class="wcsu-score-text"><?php _e('Performance Score', 'wc-speedup'); ?></span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Status Cards Row -->
+            <div class="wcsu-cards-row">
+
+                <!-- Page Cache Card -->
+                <div class="wcsu-card wcsu-card-cache">
+                    <div class="wcsu-card-icon">
+                        <span class="dashicons dashicons-database"></span>
+                    </div>
+                    <div class="wcsu-card-content">
+                        <h3><?php _e('Page Cache', 'wc-speedup'); ?></h3>
+                        <div class="wcsu-card-stat">
+                            <?php if (!empty($options['enable_page_cache'])): ?>
+                                <span class="wcsu-stat-value wcsu-good"><?php echo number_format($page_cache_stats['total_pages']); ?></span>
+                                <span class="wcsu-stat-label"><?php _e('Cached Pages', 'wc-speedup'); ?></span>
+                            <?php else: ?>
+                                <span class="wcsu-stat-value wcsu-warning"><?php _e('Off', 'wc-speedup'); ?></span>
+                                <span class="wcsu-stat-label"><?php _e('Not Active', 'wc-speedup'); ?></span>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+                    <a href="<?php echo admin_url('admin.php?page=wc-speedup-page-cache'); ?>" class="wcsu-card-link">
+                        <?php _e('Configure', 'wc-speedup'); ?> →
+                    </a>
+                </div>
+
+                <!-- Database Card -->
+                <div class="wcsu-card wcsu-card-database">
+                    <div class="wcsu-card-icon">
+                        <span class="dashicons dashicons-admin-tools"></span>
+                    </div>
+                    <div class="wcsu-card-content">
+                        <h3><?php _e('Database', 'wc-speedup'); ?></h3>
+                        <div class="wcsu-card-stat">
+                            <?php
+                            $issues = $optimizer_status['missing_indexes'] + $optimizer_status['expired_transients'] + $optimizer_status['orphaned_meta'];
+                            if ($issues > 0): ?>
+                                <span class="wcsu-stat-value wcsu-warning"><?php echo number_format($issues); ?></span>
+                                <span class="wcsu-stat-label"><?php _e('Issues Found', 'wc-speedup'); ?></span>
+                            <?php else: ?>
+                                <span class="wcsu-stat-value wcsu-good">✓</span>
+                                <span class="wcsu-stat-label"><?php _e('Optimized', 'wc-speedup'); ?></span>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+                    <a href="<?php echo admin_url('admin.php?page=wc-speedup-database'); ?>" class="wcsu-card-link">
+                        <?php _e('Optimize', 'wc-speedup'); ?> →
+                    </a>
+                </div>
+
+                <!-- Modules Card -->
+                <div class="wcsu-card wcsu-card-modules">
+                    <div class="wcsu-card-icon">
+                        <span class="dashicons dashicons-admin-plugins"></span>
+                    </div>
+                    <div class="wcsu-card-content">
+                        <h3><?php _e('Modules', 'wc-speedup'); ?></h3>
+                        <div class="wcsu-card-stat">
+                            <span class="wcsu-stat-value <?php echo $active_modules > 0 ? 'wcsu-good' : 'wcsu-warning'; ?>"><?php echo $active_modules; ?>/<?php echo count($modules); ?></span>
+                            <span class="wcsu-stat-label"><?php _e('Active', 'wc-speedup'); ?></span>
+                        </div>
+                    </div>
+                    <a href="<?php echo admin_url('admin.php?page=wc-speedup-performance'); ?>" class="wcsu-card-link">
+                        <?php _e('Manage', 'wc-speedup'); ?> →
+                    </a>
+                </div>
+
+            </div>
+
+            <!-- One Click Optimizer -->
             <div class="wcsu-one-click-optimizer">
                 <div class="wcsu-optimizer-header">
                     <div class="wcsu-optimizer-icon">
@@ -208,67 +314,106 @@ class WCSU_Admin {
                 <div id="wcsu-optimize-results" class="wcsu-optimize-results" style="display:none;"></div>
             </div>
 
-            <!-- Score Card -->
-            <div class="wcsu-score-card">
-                <div class="wcsu-score-circle <?php echo $this->get_score_class($diagnostics['overall_score']); ?>">
-                    <span class="wcsu-score-number"><?php echo $diagnostics['overall_score']; ?></span>
-                    <span class="wcsu-score-label"><?php _e('Score', 'wc-speedup'); ?></span>
-                </div>
-                <div class="wcsu-score-details">
-                    <h2><?php _e('Performance Score', 'wc-speedup'); ?></h2>
-                    <p><?php echo $this->get_score_message($diagnostics['overall_score']); ?></p>
-                </div>
-            </div>
+            <!-- Two Column Layout -->
+            <div class="wcsu-two-columns">
 
-            <!-- Quick Actions -->
-            <div class="wcsu-quick-actions">
-                <h2><?php _e('Quick Actions', 'wc-speedup'); ?></h2>
-                <div class="wcsu-actions-grid">
-                    <button class="wcsu-action-btn" data-action="clear_cache">
-                        <span class="dashicons dashicons-trash"></span>
-                        <?php _e('Clear All Caches', 'wc-speedup'); ?>
-                    </button>
-                    <button class="wcsu-action-btn" data-action="run_diagnostics">
-                        <span class="dashicons dashicons-search"></span>
-                        <?php _e('Run Diagnostics', 'wc-speedup'); ?>
-                    </button>
-                    <button class="wcsu-action-btn" data-action="cleanup_all">
-                        <span class="dashicons dashicons-database-remove"></span>
-                        <?php _e('Clean Database', 'wc-speedup'); ?>
-                    </button>
-                    <button class="wcsu-action-btn" data-action="optimize_tables">
-                        <span class="dashicons dashicons-admin-tools"></span>
-                        <?php _e('Optimize Tables', 'wc-speedup'); ?>
-                    </button>
+                <!-- Left Column - Modules Status -->
+                <div class="wcsu-column">
+                    <div class="wcsu-panel">
+                        <h2>
+                            <span class="dashicons dashicons-admin-plugins"></span>
+                            <?php _e('Performance Modules', 'wc-speedup'); ?>
+                        </h2>
+                        <div class="wcsu-modules-list">
+                            <?php foreach ($modules as $key => $label):
+                                $is_active = !empty($options[$key]);
+                            ?>
+                            <div class="wcsu-module-item <?php echo $is_active ? 'active' : 'inactive'; ?>">
+                                <span class="wcsu-module-status">
+                                    <?php if ($is_active): ?>
+                                        <span class="dashicons dashicons-yes-alt"></span>
+                                    <?php else: ?>
+                                        <span class="dashicons dashicons-marker"></span>
+                                    <?php endif; ?>
+                                </span>
+                                <span class="wcsu-module-name"><?php echo esc_html($label); ?></span>
+                                <span class="wcsu-module-badge <?php echo $is_active ? 'on' : 'off'; ?>">
+                                    <?php echo $is_active ? __('ON', 'wc-speedup') : __('OFF', 'wc-speedup'); ?>
+                                </span>
+                            </div>
+                            <?php endforeach; ?>
+                        </div>
+                        <a href="<?php echo admin_url('admin.php?page=wc-speedup-performance'); ?>" class="button button-primary wcsu-full-button">
+                            <?php _e('Configure Modules', 'wc-speedup'); ?>
+                        </a>
+                    </div>
                 </div>
-            </div>
 
-            <!-- Recommendations -->
-            <?php if (!empty($recommendations)): ?>
-            <div class="wcsu-recommendations">
-                <h2><?php _e('Recommendations', 'wc-speedup'); ?></h2>
-                <div class="wcsu-rec-list">
-                    <?php foreach (array_slice($recommendations, 0, 5) as $rec): ?>
-                    <div class="wcsu-rec-item wcsu-rec-<?php echo esc_attr($rec['priority']); ?>">
-                        <span class="wcsu-rec-priority"><?php echo ucfirst($rec['priority']); ?></span>
-                        <div class="wcsu-rec-content">
-                            <strong><?php echo esc_html($rec['label']); ?></strong>
-                            <p><?php echo esc_html($rec['message']); ?></p>
+                <!-- Right Column - Recommendations & Quick Actions -->
+                <div class="wcsu-column">
+
+                    <!-- Quick Actions -->
+                    <div class="wcsu-panel wcsu-quick-actions-panel">
+                        <h2>
+                            <span class="dashicons dashicons-admin-generic"></span>
+                            <?php _e('Quick Actions', 'wc-speedup'); ?>
+                        </h2>
+                        <div class="wcsu-actions-grid">
+                            <button class="wcsu-action-btn" data-action="clear_cache">
+                                <span class="dashicons dashicons-trash"></span>
+                                <?php _e('Clear Cache', 'wc-speedup'); ?>
+                            </button>
+                            <button class="wcsu-action-btn" data-action="run_diagnostics">
+                                <span class="dashicons dashicons-search"></span>
+                                <?php _e('Run Diagnostics', 'wc-speedup'); ?>
+                            </button>
+                            <button class="wcsu-action-btn" data-action="cleanup_all">
+                                <span class="dashicons dashicons-database-remove"></span>
+                                <?php _e('Clean DB', 'wc-speedup'); ?>
+                            </button>
+                            <button class="wcsu-action-btn" data-action="optimize_tables">
+                                <span class="dashicons dashicons-admin-tools"></span>
+                                <?php _e('Optimize', 'wc-speedup'); ?>
+                            </button>
                         </div>
                     </div>
-                    <?php endforeach; ?>
-                </div>
-                <a href="<?php echo admin_url('admin.php?page=wc-speedup-diagnostics'); ?>" class="button">
-                    <?php _e('View All Diagnostics', 'wc-speedup'); ?>
-                </a>
-            </div>
-            <?php endif; ?>
 
-            <!-- Status Overview -->
+                    <!-- Recommendations -->
+                    <?php if (!empty($recommendations)): ?>
+                    <div class="wcsu-panel wcsu-recommendations-panel">
+                        <h2>
+                            <span class="dashicons dashicons-lightbulb"></span>
+                            <?php _e('Recommendations', 'wc-speedup'); ?>
+                        </h2>
+                        <div class="wcsu-rec-list">
+                            <?php foreach (array_slice($recommendations, 0, 4) as $rec): ?>
+                            <div class="wcsu-rec-item wcsu-rec-<?php echo esc_attr($rec['priority']); ?>">
+                                <span class="wcsu-rec-priority"><?php echo ucfirst($rec['priority']); ?></span>
+                                <div class="wcsu-rec-content">
+                                    <strong><?php echo esc_html($rec['label']); ?></strong>
+                                    <p><?php echo esc_html($rec['message']); ?></p>
+                                </div>
+                            </div>
+                            <?php endforeach; ?>
+                        </div>
+                        <a href="<?php echo admin_url('admin.php?page=wc-speedup-diagnostics'); ?>" class="button wcsu-full-button">
+                            <?php _e('View All', 'wc-speedup'); ?>
+                        </a>
+                    </div>
+                    <?php endif; ?>
+
+                </div>
+
+            </div>
+
+            <!-- System Status Row -->
             <div class="wcsu-status-grid">
                 <!-- Cache Status -->
                 <div class="wcsu-status-box">
-                    <h3><?php _e('Cache Status', 'wc-speedup'); ?></h3>
+                    <h3>
+                        <span class="dashicons dashicons-performance"></span>
+                        <?php _e('Cache Status', 'wc-speedup'); ?>
+                    </h3>
                     <ul>
                         <li>
                             <span><?php _e('Object Cache:', 'wc-speedup'); ?></span>
@@ -278,8 +423,8 @@ class WCSU_Admin {
                         </li>
                         <li>
                             <span><?php _e('Page Cache:', 'wc-speedup'); ?></span>
-                            <span class="wcsu-status-<?php echo $cache_status['page_cache']['enabled'] ? 'good' : 'bad'; ?>">
-                                <?php echo $cache_status['page_cache']['plugin']; ?>
+                            <span class="wcsu-status-<?php echo !empty($options['enable_page_cache']) ? 'good' : 'bad'; ?>">
+                                <?php echo !empty($options['enable_page_cache']) ? __('Active', 'wc-speedup') : __('Inactive', 'wc-speedup'); ?>
                             </span>
                         </li>
                         <li>
@@ -293,7 +438,10 @@ class WCSU_Admin {
 
                 <!-- Server Status -->
                 <div class="wcsu-status-box">
-                    <h3><?php _e('Server Status', 'wc-speedup'); ?></h3>
+                    <h3>
+                        <span class="dashicons dashicons-cloud"></span>
+                        <?php _e('Server Status', 'wc-speedup'); ?>
+                    </h3>
                     <ul>
                         <?php foreach ($diagnostics['server'] as $key => $check): ?>
                         <li>
@@ -308,9 +456,12 @@ class WCSU_Admin {
 
                 <!-- Database Status -->
                 <div class="wcsu-status-box">
-                    <h3><?php _e('Database Status', 'wc-speedup'); ?></h3>
+                    <h3>
+                        <span class="dashicons dashicons-database"></span>
+                        <?php _e('Database Status', 'wc-speedup'); ?>
+                    </h3>
                     <ul>
-                        <?php foreach (array_slice($diagnostics['database'], 0, 5) as $key => $check): ?>
+                        <?php foreach (array_slice($diagnostics['database'], 0, 4) as $key => $check): ?>
                         <li>
                             <span><?php echo esc_html($check['label']); ?>:</span>
                             <span class="wcsu-status-<?php echo esc_attr($check['status']); ?>">
@@ -319,15 +470,15 @@ class WCSU_Admin {
                         </li>
                         <?php endforeach; ?>
                     </ul>
-                    <a href="<?php echo admin_url('admin.php?page=wc-speedup-database'); ?>" class="button button-small">
-                        <?php _e('Manage Database', 'wc-speedup'); ?>
-                    </a>
                 </div>
 
                 <!-- WooCommerce Status -->
-                <?php if (class_exists('WooCommerce')): ?>
+                <?php if (class_exists('WooCommerce') && !empty($diagnostics['woocommerce'])): ?>
                 <div class="wcsu-status-box">
-                    <h3><?php _e('WooCommerce Status', 'wc-speedup'); ?></h3>
+                    <h3>
+                        <span class="dashicons dashicons-cart"></span>
+                        <?php _e('WooCommerce', 'wc-speedup'); ?>
+                    </h3>
                     <ul>
                         <?php foreach ($diagnostics['woocommerce'] as $key => $check): ?>
                         <li>
@@ -343,6 +494,182 @@ class WCSU_Admin {
             </div>
 
         </div>
+
+        <style>
+        /* New Dashboard Styles */
+        .wcsu-dashboard-new { max-width: 1400px; }
+
+        .wcsu-dashboard-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            padding: 20px 25px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 12px;
+            color: #fff;
+        }
+        .wcsu-dashboard-header h1 {
+            color: #fff;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 28px;
+        }
+        .wcsu-dashboard-header h1 .dashicons {
+            font-size: 32px;
+            width: 32px;
+            height: 32px;
+        }
+        .wcsu-version {
+            margin: 5px 0 0;
+            opacity: 0.8;
+            font-size: 13px;
+        }
+        .wcsu-score-badge {
+            text-align: center;
+            padding: 15px 25px;
+            background: rgba(255,255,255,0.15);
+            border-radius: 10px;
+        }
+        .wcsu-score-badge .wcsu-score-number {
+            display: block;
+            font-size: 42px;
+            font-weight: 700;
+            line-height: 1;
+        }
+        .wcsu-score-badge .wcsu-score-text {
+            font-size: 12px;
+            opacity: 0.9;
+            text-transform: uppercase;
+        }
+        .wcsu-score-badge.score-good { background: rgba(70, 180, 80, 0.3); }
+        .wcsu-score-badge.score-warning { background: rgba(255, 180, 0, 0.3); }
+        .wcsu-score-badge.score-bad { background: rgba(220, 50, 50, 0.3); }
+
+        /* Cards Row */
+        .wcsu-cards-row {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            margin-bottom: 25px;
+        }
+        .wcsu-card {
+            background: #fff;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            display: flex;
+            flex-wrap: wrap;
+            align-items: flex-start;
+            position: relative;
+        }
+        .wcsu-card-icon {
+            width: 50px;
+            height: 50px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 15px;
+        }
+        .wcsu-card-icon .dashicons {
+            font-size: 24px;
+            width: 24px;
+            height: 24px;
+            color: #fff;
+        }
+        .wcsu-card-cache .wcsu-card-icon { background: linear-gradient(135deg, #667eea, #764ba2); }
+        .wcsu-card-database .wcsu-card-icon { background: linear-gradient(135deg, #f093fb, #f5576c); }
+        .wcsu-card-modules .wcsu-card-icon { background: linear-gradient(135deg, #4facfe, #00f2fe); }
+
+        .wcsu-card-content { flex: 1; }
+        .wcsu-card-content h3 { margin: 0 0 8px; font-size: 14px; color: #666; }
+        .wcsu-card-stat { display: flex; align-items: baseline; gap: 8px; }
+        .wcsu-stat-value { font-size: 28px; font-weight: 700; color: #333; }
+        .wcsu-stat-value.wcsu-good { color: #46b450; }
+        .wcsu-stat-value.wcsu-warning { color: #ffb900; }
+        .wcsu-stat-label { color: #888; font-size: 13px; }
+        .wcsu-card-link {
+            position: absolute;
+            bottom: 15px;
+            right: 20px;
+            color: #667eea;
+            text-decoration: none;
+            font-size: 13px;
+            font-weight: 500;
+        }
+        .wcsu-card-link:hover { text-decoration: underline; }
+
+        /* Two Columns */
+        .wcsu-two-columns {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 25px;
+            margin-bottom: 25px;
+        }
+        .wcsu-panel {
+            background: #fff;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            margin-bottom: 20px;
+        }
+        .wcsu-panel:last-child { margin-bottom: 0; }
+        .wcsu-panel h2 {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin: 0 0 15px;
+            font-size: 16px;
+            color: #333;
+        }
+        .wcsu-panel h2 .dashicons { color: #667eea; }
+
+        /* Modules List */
+        .wcsu-modules-list { margin-bottom: 15px; }
+        .wcsu-module-item {
+            display: flex;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        .wcsu-module-item:last-child { border-bottom: none; }
+        .wcsu-module-status { margin-right: 10px; }
+        .wcsu-module-item.active .wcsu-module-status .dashicons { color: #46b450; }
+        .wcsu-module-item.inactive .wcsu-module-status .dashicons { color: #ccc; }
+        .wcsu-module-name { flex: 1; font-size: 14px; }
+        .wcsu-module-badge {
+            font-size: 11px;
+            padding: 3px 8px;
+            border-radius: 3px;
+            font-weight: 600;
+        }
+        .wcsu-module-badge.on { background: #e6f4ea; color: #1e7e34; }
+        .wcsu-module-badge.off { background: #f0f0f0; color: #888; }
+        .wcsu-full-button { width: 100%; text-align: center; }
+
+        /* Quick Actions Panel */
+        .wcsu-quick-actions-panel .wcsu-actions-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+        .wcsu-quick-actions-panel .wcsu-action-btn {
+            padding: 12px 15px;
+            font-size: 13px;
+        }
+
+        /* Responsive */
+        @media (max-width: 1200px) {
+            .wcsu-cards-row { grid-template-columns: repeat(2, 1fr); }
+        }
+        @media (max-width: 900px) {
+            .wcsu-cards-row { grid-template-columns: 1fr; }
+            .wcsu-two-columns { grid-template-columns: 1fr; }
+        }
+        </style>
         <?php
     }
 
