@@ -3,7 +3,7 @@
  * Plugin Name: WooHoo - WooCommerce Performance Optimizer
  * Plugin URI: https://github.com/elpeer/woocommerce-speedup
  * Description: WooCommerce, but faster. WooHoo! Your shop on espresso: faster browsing, smoother checkout.
- * Version: 1.1.0
+ * Version: 1.1.1
  * Author: ElPeer
  * Author URI: https://github.com/elpeer
  * Text Domain: woohoo
@@ -21,7 +21,7 @@ if (!defined('ABSPATH')) {
 }
 
 // Plugin constants
-define('WCSU_VERSION', '1.1.0');
+define('WCSU_VERSION', '1.1.1');
 define('WCSU_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('WCSU_PLUGIN_URL', plugin_dir_url(__FILE__));
 define('WCSU_PLUGIN_BASENAME', plugin_basename(__FILE__));
@@ -108,13 +108,16 @@ final class WC_SpeedUp {
         require_once WCSU_PLUGIN_DIR . 'includes/class-wcsu-browser-caching.php';
         require_once WCSU_PLUGIN_DIR . 'includes/class-wcsu-email-queue.php';
 
-        // PageSpeed optimization modules
+        // PageSpeed optimization modules - TEMPORARILY DISABLED FOR DEBUGGING
+        // Uncomment these lines once the issue is resolved
+        /*
         require_once WCSU_PLUGIN_DIR . 'includes/class-wcsu-defer-js.php';
         require_once WCSU_PLUGIN_DIR . 'includes/class-wcsu-delay-js.php';
         require_once WCSU_PLUGIN_DIR . 'includes/class-wcsu-remove-query-strings.php';
         require_once WCSU_PLUGIN_DIR . 'includes/class-wcsu-font-optimization.php';
         require_once WCSU_PLUGIN_DIR . 'includes/class-wcsu-minify-html.php';
         require_once WCSU_PLUGIN_DIR . 'includes/class-wcsu-preload-resources.php';
+        */
 
         // Admin includes
         if (is_admin()) {
@@ -156,13 +159,15 @@ final class WC_SpeedUp {
         $this->browser_caching = new WCSU_Browser_Caching();
         $this->email_queue = new WCSU_Email_Queue();
 
-        // Initialize PageSpeed optimization modules
+        // Initialize PageSpeed optimization modules - TEMPORARILY DISABLED
+        /*
         $this->defer_js = new WCSU_Defer_JS();
         $this->delay_js = new WCSU_Delay_JS();
         $this->remove_query_strings = new WCSU_Remove_Query_Strings();
         $this->font_optimization = new WCSU_Font_Optimization();
         $this->minify_html = new WCSU_Minify_HTML();
         $this->preload_resources = new WCSU_Preload_Resources();
+        */
 
         if (is_admin()) {
             $this->admin = new WCSU_Admin();
