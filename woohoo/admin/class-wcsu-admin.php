@@ -2204,6 +2204,176 @@ class WCSU_Admin {
                     </div>
                 </div>
 
+                <!-- PageSpeed Section Header -->
+                <div class="wcsu-section-header" style="grid-column: 1 / -1; margin-top: 20px; padding: 15px 0; border-top: 2px solid #2271b1;">
+                    <h2 style="margin: 0; color: #2271b1;"><span class="dashicons dashicons-performance"></span> <?php _e('PageSpeed Optimization', 'wc-speedup'); ?></h2>
+                    <p style="margin: 5px 0 0; color: #666;"><?php _e('אופטימיזציות לשיפור ציון Google PageSpeed Insights', 'wc-speedup'); ?></p>
+                </div>
+
+                <!-- Defer JavaScript -->
+                <div class="wcsu-module-card">
+                    <div class="wcsu-module-header">
+                        <h3><span class="dashicons dashicons-editor-code"></span> <?php _e('Defer JavaScript', 'wc-speedup'); ?></h3>
+                        <label class="wcsu-toggle">
+                            <input type="checkbox" id="enable_defer_js" name="enable_defer_js" value="1" <?php checked(!empty($options['enable_defer_js'])); ?>>
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                    <p class="wcsu-module-desc"><?php _e('מוסיף defer לסקריפטים לטעינה לא-חוסמת (מונע render-blocking).', 'wc-speedup'); ?></p>
+                    <div class="wcsu-module-options" style="<?php echo empty($options['enable_defer_js']) ? 'display:none;' : ''; ?>">
+                        <div class="wcsu-option-row">
+                            <label>
+                                <input type="checkbox" name="defer_js_exclude_jquery" value="1" <?php checked(!isset($options['defer_js_exclude_jquery']) || !empty($options['defer_js_exclude_jquery'])); ?>>
+                                <?php _e('החרג jQuery (מומלץ)', 'wc-speedup'); ?>
+                            </label>
+                        </div>
+                        <div class="wcsu-option-row">
+                            <label><?php _e('החרג סקריפטים (אחד בשורה):', 'wc-speedup'); ?></label>
+                            <textarea name="defer_js_excludes" rows="3" style="width:100%;"><?php echo esc_textarea(isset($options['defer_js_excludes']) ? $options['defer_js_excludes'] : ''); ?></textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Delay JavaScript -->
+                <div class="wcsu-module-card">
+                    <div class="wcsu-module-header">
+                        <h3><span class="dashicons dashicons-clock"></span> <?php _e('Delay JavaScript', 'wc-speedup'); ?></h3>
+                        <label class="wcsu-toggle">
+                            <input type="checkbox" id="enable_delay_js" name="enable_delay_js" value="1" <?php checked(!empty($options['enable_delay_js'])); ?>>
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                    <p class="wcsu-module-desc"><?php _e('מעכב סקריפטים של צד שלישי עד אינטראקציה (גלילה, לחיצה).', 'wc-speedup'); ?></p>
+                    <div class="wcsu-module-options" style="<?php echo empty($options['enable_delay_js']) ? 'display:none;' : ''; ?>">
+                        <div class="wcsu-option-row">
+                            <label><?php _e('Timeout (מילישניות):', 'wc-speedup'); ?></label>
+                            <select name="delay_js_timeout" id="delay_js_timeout">
+                                <option value="3000" <?php selected(isset($options['delay_js_timeout']) ? $options['delay_js_timeout'] : 5000, 3000); ?>>3000ms</option>
+                                <option value="5000" <?php selected(isset($options['delay_js_timeout']) ? $options['delay_js_timeout'] : 5000, 5000); ?>>5000ms (<?php _e('מומלץ', 'wc-speedup'); ?>)</option>
+                                <option value="10000" <?php selected(isset($options['delay_js_timeout']) ? $options['delay_js_timeout'] : 5000, 10000); ?>>10000ms</option>
+                            </select>
+                        </div>
+                        <div class="wcsu-option-row">
+                            <label><?php _e('תבניות לעיכוב (אחד בשורה):', 'wc-speedup'); ?></label>
+                            <textarea name="delay_js_patterns" rows="3" style="width:100%;" placeholder="google-analytics&#10;gtag&#10;facebook"><?php echo esc_textarea(isset($options['delay_js_patterns']) ? $options['delay_js_patterns'] : ''); ?></textarea>
+                            <small style="color:#666;"><?php _e('ברירת מחדל: analytics, chat widgets, marketing scripts', 'wc-speedup'); ?></small>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Remove Query Strings -->
+                <div class="wcsu-module-card">
+                    <div class="wcsu-module-header">
+                        <h3><span class="dashicons dashicons-editor-removeformatting"></span> <?php _e('Remove Query Strings', 'wc-speedup'); ?></h3>
+                        <label class="wcsu-toggle">
+                            <input type="checkbox" id="enable_remove_query_strings" name="enable_remove_query_strings" value="1" <?php checked(!empty($options['enable_remove_query_strings'])); ?>>
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                    <p class="wcsu-module-desc"><?php _e('מסיר ?ver= מקבצי CSS/JS לשיפור caching בדפדפן ו-CDN.', 'wc-speedup'); ?></p>
+                </div>
+
+                <!-- Font Optimization -->
+                <div class="wcsu-module-card">
+                    <div class="wcsu-module-header">
+                        <h3><span class="dashicons dashicons-editor-textcolor"></span> <?php _e('Font Optimization', 'wc-speedup'); ?></h3>
+                        <label class="wcsu-toggle">
+                            <input type="checkbox" id="enable_font_optimization" name="enable_font_optimization" value="1" <?php checked(!empty($options['enable_font_optimization'])); ?>>
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                    <p class="wcsu-module-desc"><?php _e('מוסיף font-display: swap למניעת FOIT ושיפור CLS.', 'wc-speedup'); ?></p>
+                    <div class="wcsu-module-options" style="<?php echo empty($options['enable_font_optimization']) ? 'display:none;' : ''; ?>">
+                        <div class="wcsu-option-row">
+                            <label><?php _e('פונטים ל-Preload (URL מלא, אחד בשורה):', 'wc-speedup'); ?></label>
+                            <textarea name="preload_fonts" rows="2" style="width:100%;" placeholder="https://example.com/fonts/main.woff2"><?php echo esc_textarea(isset($options['preload_fonts']) ? $options['preload_fonts'] : ''); ?></textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Minify HTML -->
+                <div class="wcsu-module-card">
+                    <div class="wcsu-module-header">
+                        <h3><span class="dashicons dashicons-media-text"></span> <?php _e('Minify HTML', 'wc-speedup'); ?></h3>
+                        <label class="wcsu-toggle">
+                            <input type="checkbox" id="enable_minify_html" name="enable_minify_html" value="1" <?php checked(!empty($options['enable_minify_html'])); ?>>
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                    <p class="wcsu-module-desc"><?php _e('מסיר רווחים והערות מה-HTML להקטנת גודל הדף.', 'wc-speedup'); ?></p>
+                    <div class="wcsu-module-options" style="<?php echo empty($options['enable_minify_html']) ? 'display:none;' : ''; ?>">
+                        <div class="wcsu-option-row">
+                            <label>
+                                <input type="checkbox" name="minify_html_remove_comments" value="1" <?php checked(!isset($options['minify_html_remove_comments']) || !empty($options['minify_html_remove_comments'])); ?>>
+                                <?php _e('הסר הערות HTML', 'wc-speedup'); ?>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Preload Resources -->
+                <div class="wcsu-module-card">
+                    <div class="wcsu-module-header">
+                        <h3><span class="dashicons dashicons-format-image"></span> <?php _e('Preload Resources', 'wc-speedup'); ?></h3>
+                        <label class="wcsu-toggle">
+                            <input type="checkbox" id="enable_preload_resources" name="enable_preload_resources" value="1" <?php checked(!empty($options['enable_preload_resources'])); ?>>
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                    <p class="wcsu-module-desc"><?php _e('טעינה מוקדמת של תמונת LCP, לוגו ומשאבים קריטיים.', 'wc-speedup'); ?></p>
+                    <div class="wcsu-module-options" style="<?php echo empty($options['enable_preload_resources']) ? 'display:none;' : ''; ?>">
+                        <div class="wcsu-option-row">
+                            <label>
+                                <input type="checkbox" name="preload_featured_image" value="1" <?php checked(!isset($options['preload_featured_image']) || !empty($options['preload_featured_image'])); ?>>
+                                <?php _e('Preload תמונה ראשית (LCP)', 'wc-speedup'); ?>
+                            </label>
+                        </div>
+                        <div class="wcsu-option-row">
+                            <label>
+                                <input type="checkbox" name="preload_logo" value="1" <?php checked(!isset($options['preload_logo']) || !empty($options['preload_logo'])); ?>>
+                                <?php _e('Preload לוגו', 'wc-speedup'); ?>
+                            </label>
+                        </div>
+                        <div class="wcsu-option-row">
+                            <label><?php _e('משאבים נוספים (URL מלא, אחד בשורה):', 'wc-speedup'); ?></label>
+                            <textarea name="custom_preloads" rows="2" style="width:100%;"><?php echo esc_textarea(isset($options['custom_preloads']) ? $options['custom_preloads'] : ''); ?></textarea>
+                        </div>
+                        <div class="wcsu-option-row">
+                            <label><?php _e('דומיינים ל-Preconnect (אחד בשורה):', 'wc-speedup'); ?></label>
+                            <textarea name="preconnect_domains" rows="2" style="width:100%;" placeholder="https://cdn.example.com"><?php echo esc_textarea(isset($options['preconnect_domains']) ? $options['preconnect_domains'] : ''); ?></textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Lazy Loading (Updated) -->
+                <div class="wcsu-module-card">
+                    <div class="wcsu-module-header">
+                        <h3><span class="dashicons dashicons-images-alt2"></span> <?php _e('Lazy Loading (משופר)', 'wc-speedup'); ?></h3>
+                        <label class="wcsu-toggle">
+                            <input type="checkbox" id="enable_lazy_loading" name="enable_lazy_loading" value="1" <?php checked(!empty($options['enable_lazy_loading'])); ?>>
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                    <p class="wcsu-module-desc"><?php _e('טעינה עצלה אמיתית של תמונות - נטען רק כשגוללים אליהן.', 'wc-speedup'); ?></p>
+                    <div class="wcsu-module-options" style="<?php echo empty($options['enable_lazy_loading']) ? 'display:none;' : ''; ?>">
+                        <div class="wcsu-option-row">
+                            <label><?php _e('דלג על תמונות ראשונות (above fold):', 'wc-speedup'); ?></label>
+                            <select name="lazy_load_skip_count" id="lazy_load_skip_count">
+                                <option value="1" <?php selected(isset($options['lazy_load_skip_count']) ? $options['lazy_load_skip_count'] : 3, 1); ?>>1</option>
+                                <option value="2" <?php selected(isset($options['lazy_load_skip_count']) ? $options['lazy_load_skip_count'] : 3, 2); ?>>2</option>
+                                <option value="3" <?php selected(isset($options['lazy_load_skip_count']) ? $options['lazy_load_skip_count'] : 3, 3); ?>>3 (<?php _e('מומלץ', 'wc-speedup'); ?>)</option>
+                                <option value="5" <?php selected(isset($options['lazy_load_skip_count']) ? $options['lazy_load_skip_count'] : 3, 5); ?>>5</option>
+                            </select>
+                        </div>
+                        <div class="wcsu-option-row">
+                            <label>
+                                <input type="checkbox" name="lazy_load_bg_images" value="1" <?php checked(!empty($options['lazy_load_bg_images'])); ?>>
+                                <?php _e('כלול background images', 'wc-speedup'); ?>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
             </div>
 
             <div class="wcsu-save-section">
@@ -2340,7 +2510,27 @@ class WCSU_Admin {
                     'options[browser_cache_css_js]': $('#browser_cache_css_js').val(),
                     'options[browser_cache_images]': $('#browser_cache_images').val(),
                     'options[enable_email_queue]': $('#enable_email_queue').is(':checked') ? 1 : 0,
-                    'options[email_queue_batch_size]': $('#email_queue_batch_size').val()
+                    'options[email_queue_batch_size]': $('#email_queue_batch_size').val(),
+                    // PageSpeed options
+                    'options[enable_defer_js]': $('#enable_defer_js').is(':checked') ? 1 : 0,
+                    'options[defer_js_exclude_jquery]': $('input[name="defer_js_exclude_jquery"]').is(':checked') ? 1 : 0,
+                    'options[defer_js_excludes]': $('textarea[name="defer_js_excludes"]').val(),
+                    'options[enable_delay_js]': $('#enable_delay_js').is(':checked') ? 1 : 0,
+                    'options[delay_js_timeout]': $('#delay_js_timeout').val(),
+                    'options[delay_js_patterns]': $('textarea[name="delay_js_patterns"]').val(),
+                    'options[enable_remove_query_strings]': $('#enable_remove_query_strings').is(':checked') ? 1 : 0,
+                    'options[enable_font_optimization]': $('#enable_font_optimization').is(':checked') ? 1 : 0,
+                    'options[preload_fonts]': $('textarea[name="preload_fonts"]').val(),
+                    'options[enable_minify_html]': $('#enable_minify_html').is(':checked') ? 1 : 0,
+                    'options[minify_html_remove_comments]': $('input[name="minify_html_remove_comments"]').is(':checked') ? 1 : 0,
+                    'options[enable_preload_resources]': $('#enable_preload_resources').is(':checked') ? 1 : 0,
+                    'options[preload_featured_image]': $('input[name="preload_featured_image"]').is(':checked') ? 1 : 0,
+                    'options[preload_logo]': $('input[name="preload_logo"]').is(':checked') ? 1 : 0,
+                    'options[custom_preloads]': $('textarea[name="custom_preloads"]').val(),
+                    'options[preconnect_domains]': $('textarea[name="preconnect_domains"]').val(),
+                    // Updated lazy loading options
+                    'options[lazy_load_skip_count]': $('#lazy_load_skip_count').val(),
+                    'options[lazy_load_bg_images]': $('input[name="lazy_load_bg_images"]').is(':checked') ? 1 : 0
                 };
 
                 $.post(wcsu_vars.ajax_url, data, function(response) {

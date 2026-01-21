@@ -59,6 +59,14 @@ final class WC_SpeedUp {
     public $browser_caching;
     public $email_queue;
 
+    // PageSpeed optimization modules
+    public $defer_js;
+    public $delay_js;
+    public $remove_query_strings;
+    public $font_optimization;
+    public $minify_html;
+    public $preload_resources;
+
     /**
      * Get instance
      */
@@ -100,6 +108,14 @@ final class WC_SpeedUp {
         require_once WCSU_PLUGIN_DIR . 'includes/class-wcsu-browser-caching.php';
         require_once WCSU_PLUGIN_DIR . 'includes/class-wcsu-email-queue.php';
 
+        // PageSpeed optimization modules
+        require_once WCSU_PLUGIN_DIR . 'includes/class-wcsu-defer-js.php';
+        require_once WCSU_PLUGIN_DIR . 'includes/class-wcsu-delay-js.php';
+        require_once WCSU_PLUGIN_DIR . 'includes/class-wcsu-remove-query-strings.php';
+        require_once WCSU_PLUGIN_DIR . 'includes/class-wcsu-font-optimization.php';
+        require_once WCSU_PLUGIN_DIR . 'includes/class-wcsu-minify-html.php';
+        require_once WCSU_PLUGIN_DIR . 'includes/class-wcsu-preload-resources.php';
+
         // Admin includes
         if (is_admin()) {
             require_once WCSU_PLUGIN_DIR . 'admin/class-wcsu-admin.php';
@@ -139,6 +155,14 @@ final class WC_SpeedUp {
         $this->dns_prefetch = new WCSU_DNS_Prefetch();
         $this->browser_caching = new WCSU_Browser_Caching();
         $this->email_queue = new WCSU_Email_Queue();
+
+        // Initialize PageSpeed optimization modules
+        $this->defer_js = new WCSU_Defer_JS();
+        $this->delay_js = new WCSU_Delay_JS();
+        $this->remove_query_strings = new WCSU_Remove_Query_Strings();
+        $this->font_optimization = new WCSU_Font_Optimization();
+        $this->minify_html = new WCSU_Minify_HTML();
+        $this->preload_resources = new WCSU_Preload_Resources();
 
         if (is_admin()) {
             $this->admin = new WCSU_Admin();
