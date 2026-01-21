@@ -138,22 +138,15 @@ class WCSU_Page_Cache {
      * This is CRITICAL to prevent cart data from being cached and shown to other users
      */
     private function has_woocommerce_cart() {
-        // Check for ANY WooCommerce-related cookies
+        // Check for WooCommerce cart-related cookies only
+        // Note: we intentionally DON'T check woocommerce_recently_viewed as it doesn't contain cart data
         foreach ($_COOKIE as $name => $value) {
-            // Cart items cookie
-            if (strpos($name, 'woocommerce_items_in_cart') === 0 && $value !== '0') {
+            // Cart items cookie - user has items in cart
+            if (strpos($name, 'woocommerce_items_in_cart') === 0 && $value !== '0' && !empty($value)) {
                 return true;
             }
-            // WooCommerce session cookie (guest or logged in)
-            if (strpos($name, 'wp_woocommerce_session_') === 0) {
-                return true;
-            }
-            // WooCommerce cart hash
+            // WooCommerce cart hash - indicates cart has content
             if (strpos($name, 'woocommerce_cart_hash') === 0 && !empty($value)) {
-                return true;
-            }
-            // Recently viewed products (might contain personal data)
-            if (strpos($name, 'woocommerce_recently_viewed') === 0) {
                 return true;
             }
         }
