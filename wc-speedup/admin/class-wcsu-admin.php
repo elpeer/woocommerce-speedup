@@ -87,6 +87,15 @@ class WCSU_Admin {
             'wc-speedup-page-cache',
             array($this, 'render_page_cache')
         );
+
+        add_submenu_page(
+            'wc-speedup',
+            __('Performance', 'wc-speedup'),
+            __('Performance', 'wc-speedup'),
+            'manage_options',
+            'wc-speedup-performance',
+            array($this, 'render_performance')
+        );
     }
 
     /**
@@ -1565,6 +1574,494 @@ class WCSU_Admin {
                     complete: function() {
                         $btn.prop('disabled', false);
                     }
+                });
+            });
+        });
+        </script>
+        <?php
+    }
+
+    /**
+     * Render Performance page with all module toggles
+     */
+    public function render_performance() {
+        $options = get_option('wcsu_options', array());
+        ?>
+        <div class="wrap wcsu-admin">
+            <h1><span class="dashicons dashicons-performance"></span> <?php _e('Performance Modules', 'wc-speedup'); ?></h1>
+            <p class="description"><?php _e('הפעל והגדר מודולי ביצועים לשיפור מהירות האתר.', 'wc-speedup'); ?></p>
+
+            <div class="wcsu-performance-grid">
+
+                <!-- Cart Fragments Optimizer -->
+                <div class="wcsu-module-card">
+                    <div class="wcsu-module-header">
+                        <h3><span class="dashicons dashicons-cart"></span> <?php _e('Cart Fragments', 'wc-speedup'); ?></h3>
+                        <label class="wcsu-toggle">
+                            <input type="checkbox" id="enable_cart_fragments_optimizer" name="enable_cart_fragments_optimizer" value="1" <?php checked(!empty($options['enable_cart_fragments_optimizer'])); ?>>
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                    <p class="wcsu-module-desc"><?php _e('WooCommerce שולח בקשת AJAX בכל טעינת דף. מודול זה מייעל או מבטל את הבקשה.', 'wc-speedup'); ?></p>
+                    <div class="wcsu-module-options" style="<?php echo empty($options['enable_cart_fragments_optimizer']) ? 'display:none;' : ''; ?>">
+                        <label><?php _e('מצב:', 'wc-speedup'); ?></label>
+                        <select name="cart_fragments_mode" id="cart_fragments_mode">
+                            <option value="defer" <?php selected(isset($options['cart_fragments_mode']) ? $options['cart_fragments_mode'] : 'defer', 'defer'); ?>><?php _e('טעינה מושהית (מומלץ)', 'wc-speedup'); ?></option>
+                            <option value="disable" <?php selected(isset($options['cart_fragments_mode']) ? $options['cart_fragments_mode'] : '', 'disable'); ?>><?php _e('מושבת לחלוטין', 'wc-speedup'); ?></option>
+                            <option value="optimize" <?php selected(isset($options['cart_fragments_mode']) ? $options['cart_fragments_mode'] : '', 'optimize'); ?>><?php _e('מותאם עם localStorage', 'wc-speedup'); ?></option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Heartbeat Control -->
+                <div class="wcsu-module-card">
+                    <div class="wcsu-module-header">
+                        <h3><span class="dashicons dashicons-heart"></span> <?php _e('Heartbeat Control', 'wc-speedup'); ?></h3>
+                        <label class="wcsu-toggle">
+                            <input type="checkbox" id="enable_heartbeat_control" name="enable_heartbeat_control" value="1" <?php checked(!empty($options['enable_heartbeat_control'])); ?>>
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                    <p class="wcsu-module-desc"><?php _e('בקרת WordPress Heartbeat API שרץ ברקע ושולח בקשות AJAX.', 'wc-speedup'); ?></p>
+                    <div class="wcsu-module-options" style="<?php echo empty($options['enable_heartbeat_control']) ? 'display:none;' : ''; ?>">
+                        <div class="wcsu-option-row">
+                            <label><?php _e('בחזית האתר:', 'wc-speedup'); ?></label>
+                            <select name="heartbeat_frontend" id="heartbeat_frontend">
+                                <option value="disable" <?php selected(isset($options['heartbeat_frontend']) ? $options['heartbeat_frontend'] : 'disable', 'disable'); ?>><?php _e('מושבת', 'wc-speedup'); ?></option>
+                                <option value="slow" <?php selected(isset($options['heartbeat_frontend']) ? $options['heartbeat_frontend'] : '', 'slow'); ?>><?php _e('מואט', 'wc-speedup'); ?></option>
+                                <option value="default" <?php selected(isset($options['heartbeat_frontend']) ? $options['heartbeat_frontend'] : '', 'default'); ?>><?php _e('ברירת מחדל', 'wc-speedup'); ?></option>
+                            </select>
+                        </div>
+                        <div class="wcsu-option-row">
+                            <label><?php _e('בממשק ניהול:', 'wc-speedup'); ?></label>
+                            <select name="heartbeat_admin" id="heartbeat_admin">
+                                <option value="slow" <?php selected(isset($options['heartbeat_admin']) ? $options['heartbeat_admin'] : 'slow', 'slow'); ?>><?php _e('מואט (מומלץ)', 'wc-speedup'); ?></option>
+                                <option value="disable" <?php selected(isset($options['heartbeat_admin']) ? $options['heartbeat_admin'] : '', 'disable'); ?>><?php _e('מושבת', 'wc-speedup'); ?></option>
+                                <option value="default" <?php selected(isset($options['heartbeat_admin']) ? $options['heartbeat_admin'] : '', 'default'); ?>><?php _e('ברירת מחדל', 'wc-speedup'); ?></option>
+                            </select>
+                        </div>
+                        <div class="wcsu-option-row">
+                            <label><?php _e('בעורך תוכן:', 'wc-speedup'); ?></label>
+                            <select name="heartbeat_editor" id="heartbeat_editor">
+                                <option value="default" <?php selected(isset($options['heartbeat_editor']) ? $options['heartbeat_editor'] : 'default', 'default'); ?>><?php _e('ברירת מחדל (נדרש לשמירה אוטומטית)', 'wc-speedup'); ?></option>
+                                <option value="slow" <?php selected(isset($options['heartbeat_editor']) ? $options['heartbeat_editor'] : '', 'slow'); ?>><?php _e('מואט', 'wc-speedup'); ?></option>
+                                <option value="disable" <?php selected(isset($options['heartbeat_editor']) ? $options['heartbeat_editor'] : '', 'disable'); ?>><?php _e('מושבת', 'wc-speedup'); ?></option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sessions Cleanup -->
+                <div class="wcsu-module-card">
+                    <div class="wcsu-module-header">
+                        <h3><span class="dashicons dashicons-database-remove"></span> <?php _e('WC Sessions Cleanup', 'wc-speedup'); ?></h3>
+                        <label class="wcsu-toggle">
+                            <input type="checkbox" id="enable_sessions_cleanup" name="enable_sessions_cleanup" value="1" <?php checked(!empty($options['enable_sessions_cleanup'])); ?>>
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                    <p class="wcsu-module-desc"><?php _e('ניקוי sessions ישנים של WooCommerce שמצטברים במסד הנתונים.', 'wc-speedup'); ?></p>
+                    <div class="wcsu-module-options" style="<?php echo empty($options['enable_sessions_cleanup']) ? 'display:none;' : ''; ?>">
+                        <div class="wcsu-option-row">
+                            <label>
+                                <input type="checkbox" name="sessions_auto_cleanup" id="sessions_auto_cleanup" value="1" <?php checked(!empty($options['sessions_auto_cleanup'])); ?>>
+                                <?php _e('ניקוי אוטומטי יומי', 'wc-speedup'); ?>
+                            </label>
+                        </div>
+                        <div class="wcsu-option-row">
+                            <label><?php _e('מחיקת sessions ישנים מ:', 'wc-speedup'); ?></label>
+                            <select name="sessions_cleanup_age" id="sessions_cleanup_age">
+                                <option value="3" <?php selected(isset($options['sessions_cleanup_age']) ? $options['sessions_cleanup_age'] : 7, 3); ?>>3 <?php _e('ימים', 'wc-speedup'); ?></option>
+                                <option value="7" <?php selected(isset($options['sessions_cleanup_age']) ? $options['sessions_cleanup_age'] : 7, 7); ?>>7 <?php _e('ימים', 'wc-speedup'); ?></option>
+                                <option value="14" <?php selected(isset($options['sessions_cleanup_age']) ? $options['sessions_cleanup_age'] : 7, 14); ?>>14 <?php _e('ימים', 'wc-speedup'); ?></option>
+                                <option value="30" <?php selected(isset($options['sessions_cleanup_age']) ? $options['sessions_cleanup_age'] : 7, 30); ?>>30 <?php _e('ימים', 'wc-speedup'); ?></option>
+                            </select>
+                        </div>
+                        <button type="button" class="button wcsu-cleanup-sessions"><?php _e('נקה עכשיו', 'wc-speedup'); ?></button>
+                        <span class="wcsu-sessions-stats"></span>
+                    </div>
+                </div>
+
+                <!-- Transients Cleanup -->
+                <div class="wcsu-module-card">
+                    <div class="wcsu-module-header">
+                        <h3><span class="dashicons dashicons-trash"></span> <?php _e('Transients Cleanup', 'wc-speedup'); ?></h3>
+                        <label class="wcsu-toggle">
+                            <input type="checkbox" id="enable_transients_cleanup" name="enable_transients_cleanup" value="1" <?php checked(!empty($options['enable_transients_cleanup'])); ?>>
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                    <p class="wcsu-module-desc"><?php _e('ניקוי transients שפג תוקפם מטבלת options.', 'wc-speedup'); ?></p>
+                    <div class="wcsu-module-options" style="<?php echo empty($options['enable_transients_cleanup']) ? 'display:none;' : ''; ?>">
+                        <div class="wcsu-option-row">
+                            <label>
+                                <input type="checkbox" name="transients_auto_cleanup" id="transients_auto_cleanup" value="1" <?php checked(!empty($options['transients_auto_cleanup'])); ?>>
+                                <?php _e('ניקוי אוטומטי יומי', 'wc-speedup'); ?>
+                            </label>
+                        </div>
+                        <button type="button" class="button wcsu-cleanup-transients"><?php _e('נקה עכשיו', 'wc-speedup'); ?></button>
+                        <span class="wcsu-transients-stats"></span>
+                    </div>
+                </div>
+
+                <!-- Lazy Loading -->
+                <div class="wcsu-module-card">
+                    <div class="wcsu-module-header">
+                        <h3><span class="dashicons dashicons-images-alt2"></span> <?php _e('Lazy Loading', 'wc-speedup'); ?></h3>
+                        <label class="wcsu-toggle">
+                            <input type="checkbox" id="enable_lazy_loading" name="enable_lazy_loading" value="1" <?php checked(!empty($options['enable_lazy_loading'])); ?>>
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                    <p class="wcsu-module-desc"><?php _e('טעינה עצלה לתמונות ו-iframes לשיפור זמן טעינה ראשוני.', 'wc-speedup'); ?></p>
+                    <div class="wcsu-module-options" style="<?php echo empty($options['enable_lazy_loading']) ? 'display:none;' : ''; ?>">
+                        <div class="wcsu-option-row">
+                            <label>
+                                <input type="checkbox" name="lazy_images" id="lazy_images" value="1" <?php checked(!isset($options['lazy_images']) || !empty($options['lazy_images'])); ?>>
+                                <?php _e('תמונות', 'wc-speedup'); ?>
+                            </label>
+                        </div>
+                        <div class="wcsu-option-row">
+                            <label>
+                                <input type="checkbox" name="lazy_iframes" id="lazy_iframes" value="1" <?php checked(!isset($options['lazy_iframes']) || !empty($options['lazy_iframes'])); ?>>
+                                <?php _e('iframes (סרטונים, מפות)', 'wc-speedup'); ?>
+                            </label>
+                        </div>
+                        <div class="wcsu-option-row">
+                            <label>
+                                <input type="checkbox" name="lazy_exclude_above_fold" id="lazy_exclude_above_fold" value="1" <?php checked(!isset($options['lazy_exclude_above_fold']) || !empty($options['lazy_exclude_above_fold'])); ?>>
+                                <?php _e('החרג תמונות מעל הקיפול', 'wc-speedup'); ?>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- DNS Prefetch -->
+                <div class="wcsu-module-card">
+                    <div class="wcsu-module-header">
+                        <h3><span class="dashicons dashicons-networking"></span> <?php _e('DNS Prefetch', 'wc-speedup'); ?></h3>
+                        <label class="wcsu-toggle">
+                            <input type="checkbox" id="enable_dns_prefetch" name="enable_dns_prefetch" value="1" <?php checked(!empty($options['enable_dns_prefetch'])); ?>>
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                    <p class="wcsu-module-desc"><?php _e('טעינה מוקדמת של DNS לדומיינים חיצוניים.', 'wc-speedup'); ?></p>
+                    <div class="wcsu-module-options" style="<?php echo empty($options['enable_dns_prefetch']) ? 'display:none;' : ''; ?>">
+                        <div class="wcsu-option-row">
+                            <label>
+                                <input type="checkbox" name="dns_auto_detect" id="dns_auto_detect" value="1" <?php checked(!isset($options['dns_auto_detect']) || !empty($options['dns_auto_detect'])); ?>>
+                                <?php _e('זיהוי אוטומטי של דומיינים', 'wc-speedup'); ?>
+                            </label>
+                        </div>
+                        <div class="wcsu-option-row">
+                            <label><?php _e('דומיינים נוספים (אחד בכל שורה):', 'wc-speedup'); ?></label>
+                            <textarea name="dns_custom_domains" id="dns_custom_domains" rows="3" class="large-text code"><?php echo esc_textarea(isset($options['dns_custom_domains']) ? $options['dns_custom_domains'] : ''); ?></textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Browser Caching -->
+                <div class="wcsu-module-card">
+                    <div class="wcsu-module-header">
+                        <h3><span class="dashicons dashicons-clock"></span> <?php _e('Browser Caching', 'wc-speedup'); ?></h3>
+                        <label class="wcsu-toggle">
+                            <input type="checkbox" id="enable_browser_caching" name="enable_browser_caching" value="1" <?php checked(!empty($options['enable_browser_caching'])); ?>>
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                    <p class="wcsu-module-desc"><?php _e('הגדרת Cache-Control headers לקבצים סטטיים.', 'wc-speedup'); ?></p>
+                    <div class="wcsu-module-options" style="<?php echo empty($options['enable_browser_caching']) ? 'display:none;' : ''; ?>">
+                        <div class="wcsu-option-row">
+                            <label><?php _e('CSS & JavaScript:', 'wc-speedup'); ?></label>
+                            <select name="browser_cache_css_js" id="browser_cache_css_js">
+                                <option value="604800" <?php selected(isset($options['browser_cache_css_js']) ? $options['browser_cache_css_js'] : 2592000, 604800); ?>>7 <?php _e('ימים', 'wc-speedup'); ?></option>
+                                <option value="2592000" <?php selected(isset($options['browser_cache_css_js']) ? $options['browser_cache_css_js'] : 2592000, 2592000); ?>>30 <?php _e('ימים', 'wc-speedup'); ?></option>
+                                <option value="31536000" <?php selected(isset($options['browser_cache_css_js']) ? $options['browser_cache_css_js'] : 2592000, 31536000); ?>>1 <?php _e('שנה', 'wc-speedup'); ?></option>
+                            </select>
+                        </div>
+                        <div class="wcsu-option-row">
+                            <label><?php _e('תמונות:', 'wc-speedup'); ?></label>
+                            <select name="browser_cache_images" id="browser_cache_images">
+                                <option value="2592000" <?php selected(isset($options['browser_cache_images']) ? $options['browser_cache_images'] : 31536000, 2592000); ?>>30 <?php _e('ימים', 'wc-speedup'); ?></option>
+                                <option value="31536000" <?php selected(isset($options['browser_cache_images']) ? $options['browser_cache_images'] : 31536000, 31536000); ?>>1 <?php _e('שנה (מומלץ)', 'wc-speedup'); ?></option>
+                            </select>
+                        </div>
+                        <button type="button" class="button wcsu-generate-htaccess"><?php _e('צור כללי .htaccess', 'wc-speedup'); ?></button>
+                        <button type="button" class="button wcsu-remove-htaccess"><?php _e('הסר כללים', 'wc-speedup'); ?></button>
+                        <?php
+                        $browser_caching = wcsu()->browser_caching;
+                        if ($browser_caching->has_htaccess_rules()) {
+                            echo '<span class="wcsu-htaccess-status" style="color: green; margin-right: 10px;">✓ ' . __('כללים מותקנים', 'wc-speedup') . '</span>';
+                        }
+                        ?>
+                    </div>
+                </div>
+
+                <!-- Email Queue -->
+                <div class="wcsu-module-card">
+                    <div class="wcsu-module-header">
+                        <h3><span class="dashicons dashicons-email-alt"></span> <?php _e('Email Queue', 'wc-speedup'); ?></h3>
+                        <label class="wcsu-toggle">
+                            <input type="checkbox" id="enable_email_queue" name="enable_email_queue" value="1" <?php checked(!empty($options['enable_email_queue'])); ?>>
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                    <p class="wcsu-module-desc"><?php _e('תור מיילים ל-WooCommerce - שליחה ברקע במקום בזמן הזמנה.', 'wc-speedup'); ?></p>
+                    <div class="wcsu-module-options" style="<?php echo empty($options['enable_email_queue']) ? 'display:none;' : ''; ?>">
+                        <div class="wcsu-option-row">
+                            <label><?php _e('גודל אצווה:', 'wc-speedup'); ?></label>
+                            <select name="email_queue_batch_size" id="email_queue_batch_size">
+                                <option value="5" <?php selected(isset($options['email_queue_batch_size']) ? $options['email_queue_batch_size'] : 10, 5); ?>>5</option>
+                                <option value="10" <?php selected(isset($options['email_queue_batch_size']) ? $options['email_queue_batch_size'] : 10, 10); ?>>10</option>
+                                <option value="20" <?php selected(isset($options['email_queue_batch_size']) ? $options['email_queue_batch_size'] : 10, 20); ?>>20</option>
+                            </select>
+                        </div>
+                        <button type="button" class="button wcsu-process-email-queue"><?php _e('עבד תור', 'wc-speedup'); ?></button>
+                        <span class="wcsu-email-queue-stats"></span>
+                    </div>
+                </div>
+
+            </div>
+
+            <div class="wcsu-save-section">
+                <button type="button" id="wcsu-save-performance" class="button button-primary button-hero"><?php _e('שמור הגדרות', 'wc-speedup'); ?></button>
+            </div>
+        </div>
+
+        <style>
+        .wcsu-performance-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+        .wcsu-module-card {
+            background: #fff;
+            border: 1px solid #ccd0d4;
+            border-radius: 4px;
+            padding: 20px;
+        }
+        .wcsu-module-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        .wcsu-module-header h3 {
+            margin: 0;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .wcsu-module-desc {
+            color: #666;
+            margin-bottom: 15px;
+        }
+        .wcsu-module-options {
+            background: #f9f9f9;
+            padding: 15px;
+            border-radius: 4px;
+        }
+        .wcsu-option-row {
+            margin-bottom: 10px;
+        }
+        .wcsu-option-row:last-child {
+            margin-bottom: 0;
+        }
+        .wcsu-toggle {
+            position: relative;
+            display: inline-block;
+            width: 50px;
+            height: 26px;
+        }
+        .wcsu-toggle input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        .wcsu-toggle .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: .3s;
+            border-radius: 26px;
+        }
+        .wcsu-toggle .slider:before {
+            position: absolute;
+            content: "";
+            height: 20px;
+            width: 20px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: .3s;
+            border-radius: 50%;
+        }
+        .wcsu-toggle input:checked + .slider {
+            background-color: #2271b1;
+        }
+        .wcsu-toggle input:checked + .slider:before {
+            transform: translateX(24px);
+        }
+        .wcsu-save-section {
+            margin-top: 30px;
+            text-align: center;
+        }
+        </style>
+
+        <script>
+        jQuery(document).ready(function($) {
+            // Toggle module options visibility
+            $('.wcsu-module-card input[type="checkbox"]').on('change', function() {
+                var $card = $(this).closest('.wcsu-module-card');
+                var $options = $card.find('.wcsu-module-options');
+
+                if ($(this).is(':checked')) {
+                    $options.slideDown();
+                } else {
+                    $options.slideUp();
+                }
+            });
+
+            // Save performance settings
+            $('#wcsu-save-performance').on('click', function() {
+                var $btn = $(this);
+                $btn.prop('disabled', true).text('<?php _e('שומר...', 'wc-speedup'); ?>');
+
+                var data = {
+                    action: 'wcsu_save_options',
+                    nonce: wcsu_vars.nonce,
+                    enable_cart_fragments_optimizer: $('#enable_cart_fragments_optimizer').is(':checked') ? 1 : 0,
+                    cart_fragments_mode: $('#cart_fragments_mode').val(),
+                    enable_heartbeat_control: $('#enable_heartbeat_control').is(':checked') ? 1 : 0,
+                    heartbeat_frontend: $('#heartbeat_frontend').val(),
+                    heartbeat_admin: $('#heartbeat_admin').val(),
+                    heartbeat_editor: $('#heartbeat_editor').val(),
+                    enable_sessions_cleanup: $('#enable_sessions_cleanup').is(':checked') ? 1 : 0,
+                    sessions_auto_cleanup: $('#sessions_auto_cleanup').is(':checked') ? 1 : 0,
+                    sessions_cleanup_age: $('#sessions_cleanup_age').val(),
+                    enable_transients_cleanup: $('#enable_transients_cleanup').is(':checked') ? 1 : 0,
+                    transients_auto_cleanup: $('#transients_auto_cleanup').is(':checked') ? 1 : 0,
+                    enable_lazy_loading: $('#enable_lazy_loading').is(':checked') ? 1 : 0,
+                    lazy_images: $('#lazy_images').is(':checked') ? 1 : 0,
+                    lazy_iframes: $('#lazy_iframes').is(':checked') ? 1 : 0,
+                    lazy_exclude_above_fold: $('#lazy_exclude_above_fold').is(':checked') ? 1 : 0,
+                    enable_dns_prefetch: $('#enable_dns_prefetch').is(':checked') ? 1 : 0,
+                    dns_auto_detect: $('#dns_auto_detect').is(':checked') ? 1 : 0,
+                    dns_custom_domains: $('#dns_custom_domains').val(),
+                    enable_browser_caching: $('#enable_browser_caching').is(':checked') ? 1 : 0,
+                    browser_cache_css_js: $('#browser_cache_css_js').val(),
+                    browser_cache_images: $('#browser_cache_images').val(),
+                    enable_email_queue: $('#enable_email_queue').is(':checked') ? 1 : 0,
+                    email_queue_batch_size: $('#email_queue_batch_size').val()
+                };
+
+                $.post(wcsu_vars.ajax_url, data, function(response) {
+                    if (response.success) {
+                        WCSU_Admin.showToast('<?php _e('ההגדרות נשמרו!', 'wc-speedup'); ?>', 'success');
+                    } else {
+                        WCSU_Admin.showToast(response.data || '<?php _e('שגיאה בשמירה', 'wc-speedup'); ?>', 'error');
+                    }
+                    $btn.prop('disabled', false).text('<?php _e('שמור הגדרות', 'wc-speedup'); ?>');
+                }).fail(function() {
+                    WCSU_Admin.showToast('<?php _e('שגיאת תקשורת', 'wc-speedup'); ?>', 'error');
+                    $btn.prop('disabled', false).text('<?php _e('שמור הגדרות', 'wc-speedup'); ?>');
+                });
+            });
+
+            // Cleanup sessions
+            $('.wcsu-cleanup-sessions').on('click', function() {
+                var $btn = $(this);
+                $btn.prop('disabled', true);
+
+                $.post(wcsu_vars.ajax_url, {
+                    action: 'wcsu_cleanup_sessions',
+                    nonce: wcsu_vars.nonce
+                }, function(response) {
+                    if (response.success) {
+                        WCSU_Admin.showToast(response.data.message, 'success');
+                    } else {
+                        WCSU_Admin.showToast(response.data, 'error');
+                    }
+                    $btn.prop('disabled', false);
+                });
+            });
+
+            // Cleanup transients
+            $('.wcsu-cleanup-transients').on('click', function() {
+                var $btn = $(this);
+                $btn.prop('disabled', true);
+
+                $.post(wcsu_vars.ajax_url, {
+                    action: 'wcsu_cleanup_transients',
+                    nonce: wcsu_vars.nonce
+                }, function(response) {
+                    if (response.success) {
+                        WCSU_Admin.showToast(response.data.message, 'success');
+                    } else {
+                        WCSU_Admin.showToast(response.data, 'error');
+                    }
+                    $btn.prop('disabled', false);
+                });
+            });
+
+            // Generate .htaccess rules
+            $('.wcsu-generate-htaccess').on('click', function() {
+                var $btn = $(this);
+                $btn.prop('disabled', true);
+
+                $.post(wcsu_vars.ajax_url, {
+                    action: 'wcsu_generate_htaccess',
+                    nonce: wcsu_vars.nonce
+                }, function(response) {
+                    if (response.success) {
+                        WCSU_Admin.showToast(response.data.message, 'success');
+                        location.reload();
+                    } else {
+                        WCSU_Admin.showToast(response.data, 'error');
+                    }
+                    $btn.prop('disabled', false);
+                });
+            });
+
+            // Remove .htaccess rules
+            $('.wcsu-remove-htaccess').on('click', function() {
+                var $btn = $(this);
+                $btn.prop('disabled', true);
+
+                $.post(wcsu_vars.ajax_url, {
+                    action: 'wcsu_remove_htaccess',
+                    nonce: wcsu_vars.nonce
+                }, function(response) {
+                    if (response.success) {
+                        WCSU_Admin.showToast(response.data.message, 'success');
+                        location.reload();
+                    } else {
+                        WCSU_Admin.showToast(response.data, 'error');
+                    }
+                    $btn.prop('disabled', false);
+                });
+            });
+
+            // Process email queue
+            $('.wcsu-process-email-queue').on('click', function() {
+                var $btn = $(this);
+                $btn.prop('disabled', true);
+
+                $.post(wcsu_vars.ajax_url, {
+                    action: 'wcsu_process_email_queue',
+                    nonce: wcsu_vars.nonce
+                }, function(response) {
+                    if (response.success) {
+                        WCSU_Admin.showToast(response.data, 'success');
+                    } else {
+                        WCSU_Admin.showToast(response.data, 'error');
+                    }
+                    $btn.prop('disabled', false);
                 });
             });
         });

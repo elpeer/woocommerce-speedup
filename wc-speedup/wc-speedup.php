@@ -21,10 +21,11 @@ if (!defined('ABSPATH')) {
 }
 
 // Plugin constants
-define('WCSU_VERSION', '1.0.0');
+define('WCSU_VERSION', '1.1.0');
 define('WCSU_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('WCSU_PLUGIN_URL', plugin_dir_url(__FILE__));
 define('WCSU_PLUGIN_BASENAME', plugin_basename(__FILE__));
+define('WCSU_PLUGIN_FILE', __FILE__);
 
 /**
  * Main Plugin Class
@@ -47,6 +48,16 @@ final class WC_SpeedUp {
     public $query_profiler;
     public $auto_optimizer;
     public $admin;
+
+    // New performance modules
+    public $cart_fragments;
+    public $heartbeat;
+    public $sessions_cleanup;
+    public $transients_cleanup;
+    public $lazy_loading;
+    public $dns_prefetch;
+    public $browser_caching;
+    public $email_queue;
 
     /**
      * Get instance
@@ -79,6 +90,16 @@ final class WC_SpeedUp {
         require_once WCSU_PLUGIN_DIR . 'includes/class-wcsu-query-profiler.php';
         require_once WCSU_PLUGIN_DIR . 'includes/class-wcsu-auto-optimizer.php';
 
+        // New performance modules
+        require_once WCSU_PLUGIN_DIR . 'includes/class-wcsu-cart-fragments.php';
+        require_once WCSU_PLUGIN_DIR . 'includes/class-wcsu-heartbeat.php';
+        require_once WCSU_PLUGIN_DIR . 'includes/class-wcsu-sessions-cleanup.php';
+        require_once WCSU_PLUGIN_DIR . 'includes/class-wcsu-transients-cleanup.php';
+        require_once WCSU_PLUGIN_DIR . 'includes/class-wcsu-lazy-loading.php';
+        require_once WCSU_PLUGIN_DIR . 'includes/class-wcsu-dns-prefetch.php';
+        require_once WCSU_PLUGIN_DIR . 'includes/class-wcsu-browser-caching.php';
+        require_once WCSU_PLUGIN_DIR . 'includes/class-wcsu-email-queue.php';
+
         // Admin includes
         if (is_admin()) {
             require_once WCSU_PLUGIN_DIR . 'admin/class-wcsu-admin.php';
@@ -100,7 +121,7 @@ final class WC_SpeedUp {
      * Initialize plugin
      */
     public function init() {
-        // Initialize modules
+        // Initialize core modules
         $this->diagnostics = new WCSU_Diagnostics();
         $this->database = new WCSU_Database();
         $this->cache = new WCSU_Cache();
@@ -108,6 +129,16 @@ final class WC_SpeedUp {
         $this->woo_optimizer = new WCSU_Woo_Optimizer();
         $this->query_profiler = new WCSU_Query_Profiler();
         $this->auto_optimizer = new WCSU_Auto_Optimizer();
+
+        // Initialize new performance modules
+        $this->cart_fragments = new WCSU_Cart_Fragments();
+        $this->heartbeat = new WCSU_Heartbeat();
+        $this->sessions_cleanup = new WCSU_Sessions_Cleanup();
+        $this->transients_cleanup = new WCSU_Transients_Cleanup();
+        $this->lazy_loading = new WCSU_Lazy_Loading();
+        $this->dns_prefetch = new WCSU_DNS_Prefetch();
+        $this->browser_caching = new WCSU_Browser_Caching();
+        $this->email_queue = new WCSU_Email_Queue();
 
         if (is_admin()) {
             $this->admin = new WCSU_Admin();
