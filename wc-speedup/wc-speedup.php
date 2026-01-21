@@ -44,6 +44,7 @@ final class WC_SpeedUp {
     public $cache;
     public $woo_optimizer;
     public $query_profiler;
+    public $auto_optimizer;
     public $admin;
 
     /**
@@ -74,6 +75,7 @@ final class WC_SpeedUp {
         require_once WCSU_PLUGIN_DIR . 'includes/class-wcsu-cache.php';
         require_once WCSU_PLUGIN_DIR . 'includes/class-wcsu-woo-optimizer.php';
         require_once WCSU_PLUGIN_DIR . 'includes/class-wcsu-query-profiler.php';
+        require_once WCSU_PLUGIN_DIR . 'includes/class-wcsu-auto-optimizer.php';
 
         // Admin includes
         if (is_admin()) {
@@ -102,6 +104,7 @@ final class WC_SpeedUp {
         $this->cache = new WCSU_Cache();
         $this->woo_optimizer = new WCSU_Woo_Optimizer();
         $this->query_profiler = new WCSU_Query_Profiler();
+        $this->auto_optimizer = new WCSU_Auto_Optimizer();
 
         if (is_admin()) {
             $this->admin = new WCSU_Admin();

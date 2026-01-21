@@ -134,10 +134,61 @@ class WCSU_Admin {
         $diagnostics = wcsu()->diagnostics->run_full_diagnostics();
         $recommendations = wcsu()->diagnostics->get_recommendations();
         $cache_status = wcsu()->cache->get_cache_status();
+        $optimizer_status = wcsu()->auto_optimizer->get_status();
 
         ?>
         <div class="wrap wcsu-wrap">
             <h1><?php _e('WC SpeedUp - Performance Dashboard', 'wc-speedup'); ?></h1>
+
+            <!-- ONE CLICK OPTIMIZER - Main Feature -->
+            <div class="wcsu-one-click-optimizer">
+                <div class="wcsu-optimizer-header">
+                    <div class="wcsu-optimizer-icon">
+                        <span class="dashicons dashicons-superhero"></span>
+                    </div>
+                    <div class="wcsu-optimizer-info">
+                        <h2><?php _e('One-Click Database Optimizer', 'wc-speedup'); ?></h2>
+                        <p><?php _e('Fix all database performance issues automatically - adds missing indexes, cleans autoload, removes orphaned data, and optimizes tables.', 'wc-speedup'); ?></p>
+                    </div>
+                </div>
+
+                <div class="wcsu-optimizer-status">
+                    <div class="wcsu-status-item wcsu-status-<?php echo $optimizer_status['autoload_status']; ?>">
+                        <span class="wcsu-status-label"><?php _e('Autoload Size', 'wc-speedup'); ?></span>
+                        <span class="wcsu-status-value"><?php echo size_format($optimizer_status['autoload_size']); ?></span>
+                    </div>
+                    <div class="wcsu-status-item wcsu-status-<?php echo $optimizer_status['index_status']; ?>">
+                        <span class="wcsu-status-label"><?php _e('Missing Indexes', 'wc-speedup'); ?></span>
+                        <span class="wcsu-status-value"><?php echo $optimizer_status['missing_indexes']; ?></span>
+                    </div>
+                    <div class="wcsu-status-item wcsu-status-<?php echo $optimizer_status['transient_status']; ?>">
+                        <span class="wcsu-status-label"><?php _e('Expired Transients', 'wc-speedup'); ?></span>
+                        <span class="wcsu-status-value"><?php echo number_format($optimizer_status['expired_transients']); ?></span>
+                    </div>
+                    <div class="wcsu-status-item wcsu-status-<?php echo $optimizer_status['orphan_status']; ?>">
+                        <span class="wcsu-status-label"><?php _e('Orphaned Data', 'wc-speedup'); ?></span>
+                        <span class="wcsu-status-value"><?php echo number_format($optimizer_status['orphaned_meta']); ?></span>
+                    </div>
+                </div>
+
+                <div class="wcsu-optimizer-actions">
+                    <button class="wcsu-big-button wcsu-auto-optimize-btn" id="wcsu-auto-optimize">
+                        <span class="dashicons dashicons-performance"></span>
+                        <?php _e('Fix All Issues Now', 'wc-speedup'); ?>
+                    </button>
+
+                    <?php if ($optimizer_status['last_optimization']): ?>
+                    <p class="wcsu-last-run">
+                        <?php printf(
+                            __('Last optimization: %s', 'wc-speedup'),
+                            date_i18n(get_option('date_format') . ' ' . get_option('time_format'), $optimizer_status['last_optimization'])
+                        ); ?>
+                    </p>
+                    <?php endif; ?>
+                </div>
+
+                <div id="wcsu-optimize-results" class="wcsu-optimize-results" style="display:none;"></div>
+            </div>
 
             <!-- Score Card -->
             <div class="wcsu-score-card">

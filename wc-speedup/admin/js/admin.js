@@ -44,6 +44,9 @@
 
             // Profiler: Clear query log
             $(document).on('click', '#wcsu-clear-query-log', this.handleClearQueryLog);
+
+            // Auto Optimizer: One-click fix all
+            $(document).on('click', '#wcsu-auto-optimize', this.handleAutoOptimize);
         },
 
         /**
@@ -478,6 +481,63 @@
                 success: function(response) {
                     WCSU_Admin.showToast('Query log cleared', 'success');
                     location.reload();
+                }
+            });
+        },
+
+        /**
+         * Handle auto optimize - One click fix all
+         */
+        handleAutoOptimize: function(e) {
+            e.preventDefault();
+            var $btn = $(this);
+            var $results = $('#wcsu-optimize-results');
+
+            if ($btn.hasClass('loading')) {
+                return;
+            }
+
+            var originalHtml = $btn.html();
+            $btn.addClass('loading').html('<span class="dashicons dashicons-update wcsu-spin"></span> Optimizing...');
+            $results.hide().empty();
+
+            $.ajax({
+                url: wcsu_vars.ajax_url,
+                type: 'POST',
+                timeout: 300000, // 5 minutes timeout
+                data: {
+                    action: 'wcsu_auto_optimize',
+                    nonce: wcsu_vars.nonce
+                },
+                success: function(response) {
+                    if (response.success) {
+                        var html = '<h4>✅ Optimization Complete!</h4>';
+
+                        if (response.data.actions) {
+                            response.data.actions.forEach(function(action) {
+                                html += '<div class="wcsu-result-item">';
+                                html += '<span class="result-name">' + action.name + '</span>';
+                                html += '<span class="result-value">' + action.result.message + '</span>';
+                                html += '</div>';
+                            });
+                        }
+
+                        $results.html(html).slideDown();
+                        WCSU_Admin.showToast('Database optimized successfully!', 'success');
+
+                        // Reload after 2 seconds to show updated stats
+                        setTimeout(function() {
+                            location.reload();
+                        }, 3000);
+                    } else {
+                        WCSU_Admin.showToast(response.data || 'Optimization failed', 'error');
+                    }
+                },
+                error: function(xhr, status, error) {
+                    WCSU_Admin.showToast('Error: ' + error, 'error');
+                },
+                complete: function() {
+                    $btn.removeClass('loading').html(originalHtml);
                 }
             });
         }
