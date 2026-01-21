@@ -119,6 +119,11 @@ class WCSU_Page_Cache {
             return false;
         }
 
+        // Don't serve cache if user has wishlist items
+        if ($this->has_wishlist()) {
+            return false;
+        }
+
         return true;
     }
 
@@ -136,8 +141,8 @@ class WCSU_Page_Cache {
     }
 
     /**
-     * Check if user has WooCommerce cart items
-     * This is CRITICAL to prevent cart data from being cached and shown to other users
+     * Check if user has WooCommerce cart items or wishlist
+     * This is CRITICAL to prevent personalized data from being cached and shown to other users
      */
     private function has_woocommerce_cart() {
         // ONLY check woocommerce_items_in_cart cookie
@@ -147,6 +152,30 @@ class WCSU_Page_Cache {
             if (strpos($name, 'woocommerce_items_in_cart') === 0) {
                 // Only block if value is "1" (has items)
                 if ($value === '1') {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Check if user has active wishlist
+     * Prevents caching pages for users with wishlist items
+     */
+    private function has_wishlist() {
+        // Check for common wishlist plugin cookies
+        $wishlist_cookies = array(
+            'el_wishlist',           // EL Wishlist
+            'yith_wcwl',             // YITH WooCommerce Wishlist
+            'ti_wishlist',           // TI WooCommerce Wishlist
+            'wc_wishlist',           // Generic WC wishlist
+            'wishlist_',             // Generic wishlist prefix
+        );
+
+        foreach ($_COOKIE as $name => $value) {
+            foreach ($wishlist_cookies as $prefix) {
+                if (strpos($name, $prefix) === 0 && !empty($value)) {
                     return true;
                 }
             }
@@ -185,6 +214,12 @@ class WCSU_Page_Cache {
         // Don't cache if user has WooCommerce session/cart (CRITICAL for preventing cart leakage)
         if ($this->has_woocommerce_cart()) {
             $this->debug_log("SKIP: Has WooCommerce cart - {$uri}");
+            return false;
+        }
+
+        // Don't cache if user has wishlist items (prevents showing wrong wishlist state)
+        if ($this->has_wishlist()) {
+            $this->debug_log("SKIP: Has Wishlist - {$uri}");
             return false;
         }
 
@@ -251,6 +286,12 @@ class WCSU_Page_Cache {
             '/order-received',
             '/order-pay',
             '/view-order',
+            // API endpoints - should never be cached
+            '/wp-json/',
+            '/wp-json',
+            // Wishlist pages
+            '/wishlist',
+            '/my-wishlist',
         );
 
         // Add WooCommerce endpoint patterns
@@ -440,6 +481,12 @@ class WCSU_Page_Cache {
             return $buffer;
         }
 
+        // SAFETY CHECK: Double-check for wishlist
+        if ($this->has_wishlist()) {
+            $this->debug_log("SAVE SKIP: Has wishlist in save - {$uri}");
+            return $buffer;
+        }
+
         // SAFETY CHECK: Don't cache if page contains personalized cart data
         // Look for signs of cart content that shouldn't be cached
         if ($this->contains_personal_cart_data($buffer)) {
@@ -492,8 +539,8 @@ class WCSU_Page_Cache {
     }
 
     /**
-     * Check if page contains personal cart data that shouldn't be cached
-     * Only checks for actual cart items, not empty cart widgets
+     * Check if page contains personal data that shouldn't be cached
+     * Checks for cart items and wishlist items
      */
     private function contains_personal_cart_data($buffer) {
         // Only check for actual cart items in mini-cart
@@ -501,6 +548,22 @@ class WCSU_Page_Cache {
         if (strpos($buffer, 'mini_cart_item') !== false) {
             // Double check it's actually a cart item, not just text
             if (preg_match('/<li[^>]*class="[^"]*mini_cart_item[^"]*"/i', $buffer)) {
+                return true;
+            }
+        }
+
+        // Check for wishlist items with "added" state
+        // Common patterns for wishlist plugins showing item is in wishlist
+        $wishlist_patterns = array(
+            'wishlist-added',
+            'in-wishlist',
+            'added-to-wishlist',
+            'el-wishlist-added',
+            'yith-wcwl-add-to-wishlist-added',
+        );
+
+        foreach ($wishlist_patterns as $pattern) {
+            if (strpos($buffer, $pattern) !== false) {
                 return true;
             }
         }
