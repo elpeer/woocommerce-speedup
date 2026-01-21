@@ -136,20 +136,19 @@ class WCSU_Page_Cache {
     }
 
     /**
-     * Check if user has WooCommerce session or cart items
+     * Check if user has WooCommerce cart items
      * This is CRITICAL to prevent cart data from being cached and shown to other users
      */
     private function has_woocommerce_cart() {
-        // Check for WooCommerce cart-related cookies only
-        // Note: we intentionally DON'T check woocommerce_recently_viewed as it doesn't contain cart data
+        // ONLY check woocommerce_items_in_cart cookie
+        // Note: woocommerce_cart_hash is set even for EMPTY carts, so we can't use it
+        // The items_in_cart cookie is "1" when there are items, doesn't exist or "0" when empty
         foreach ($_COOKIE as $name => $value) {
-            // Cart items cookie - user has items in cart
-            if (strpos($name, 'woocommerce_items_in_cart') === 0 && $value !== '0' && !empty($value)) {
-                return true;
-            }
-            // WooCommerce cart hash - indicates cart has content
-            if (strpos($name, 'woocommerce_cart_hash') === 0 && !empty($value)) {
-                return true;
+            if (strpos($name, 'woocommerce_items_in_cart') === 0) {
+                // Only block if value is "1" (has items)
+                if ($value === '1') {
+                    return true;
+                }
             }
         }
         return false;
