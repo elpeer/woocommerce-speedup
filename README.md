@@ -1,11 +1,17 @@
-# WC SpeedUp - WooCommerce Performance Optimizer
+# WooHoo - WooCommerce Performance Optimizer
 
-תוסף מקיף לשיפור ביצועים ומהירות אתרי WooCommerce.
+**WooCommerce, but faster. WooHoo!**
+
+*Your shop on espresso: faster browsing, smoother checkout.*
 
 ![Version](https://img.shields.io/badge/version-1.1.0-blue)
 ![WordPress](https://img.shields.io/badge/WordPress-5.0%2B-green)
 ![WooCommerce](https://img.shields.io/badge/WooCommerce-5.0%2B-purple)
 ![PHP](https://img.shields.io/badge/PHP-7.4%2B-blue)
+
+<p align="center">
+  <img src="assets/images/woohoo-logo.png" alt="WooHoo Logo" width="300">
+</p>
 
 ## תכונות עיקריות
 
@@ -58,10 +64,10 @@
 ## שימוש
 
 ### דשבורד ראשי
-נווט ל-**WC SpeedUp** בתפריט הניהול לגישה לדשבורד הראשי.
+נווט ל-**WooHoo** בתפריט הניהול לגישה לדשבורד הראשי.
 
 ### Page Cache
-1. עבור ל-**WC SpeedUp → Page Cache**
+1. עבור ל-**WooHoo → Page Cache**
 2. הפעל את הקאש
 3. הגדר TTL (זמן תפוגה)
 4. הוסף החרגות לפי הצורך
@@ -82,7 +88,7 @@
 ```
 
 ### Performance Modules
-1. עבור ל-**WC SpeedUp → Performance**
+1. עבור ל-**WooHoo → Performance**
 2. הפעל/כבה מודולים לפי הצורך
 3. הגדר אפשרויות לכל מודול
 4. לחץ "שמור הגדרות"

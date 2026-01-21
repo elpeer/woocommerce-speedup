@@ -25,8 +25,8 @@ class WCSU_Admin {
      */
     public function add_admin_menu() {
         add_menu_page(
-            __('WC SpeedUp', 'wc-speedup'),
-            __('WC SpeedUp', 'wc-speedup'),
+            __('WooHoo', 'woohoo'),
+            __('WooHoo', 'woohoo'),
             'manage_options',
             'wc-speedup',
             array($this, 'render_dashboard'),
@@ -182,16 +182,22 @@ class WCSU_Admin {
             <!-- Header with Score -->
             <div class="wcsu-dashboard-header">
                 <div class="wcsu-header-left">
-                    <h1>
-                        <span class="dashicons dashicons-performance"></span>
-                        <?php _e('WC SpeedUp', 'wc-speedup'); ?>
-                    </h1>
+                    <div class="wcsu-logo-container">
+                        <?php if (file_exists(WCSU_PLUGIN_DIR . 'assets/images/woohoo-logo.png')): ?>
+                            <img src="<?php echo WCSU_PLUGIN_URL; ?>assets/images/woohoo-logo.png" alt="WooHoo" class="wcsu-logo-img">
+                        <?php else: ?>
+                            <h1 class="wcsu-logo-text">
+                                <span class="woohoo-w">W</span><span class="woohoo-oo">oo</span><span class="woohoo-h">H</span><span class="woohoo-oo2">oo</span>
+                            </h1>
+                        <?php endif; ?>
+                    </div>
+                    <p class="wcsu-tagline"><?php _e('Your shop on espresso!', 'woohoo'); ?></p>
                     <p class="wcsu-version">v<?php echo WCSU_VERSION; ?></p>
                 </div>
                 <div class="wcsu-header-score">
                     <div class="wcsu-score-badge <?php echo $this->get_score_class($diagnostics['overall_score']); ?>">
                         <span class="wcsu-score-number"><?php echo $diagnostics['overall_score']; ?></span>
-                        <span class="wcsu-score-text"><?php _e('Performance Score', 'wc-speedup'); ?></span>
+                        <span class="wcsu-score-text"><?php _e('Performance Score', 'woohoo'); ?></span>
                     </div>
                 </div>
             </div>
@@ -496,7 +502,12 @@ class WCSU_Admin {
         </div>
 
         <style>
-        /* New Dashboard Styles */
+        /* WooHoo Dashboard Styles */
+        :root {
+            --woohoo-blue: #2B7FD4;
+            --woohoo-orange: #F7941D;
+            --woohoo-gradient: linear-gradient(135deg, #2B7FD4 0%, #F7941D 100%);
+        }
         .wcsu-dashboard-new { max-width: 1400px; }
 
         .wcsu-dashboard-header {
@@ -504,34 +515,41 @@ class WCSU_Admin {
             justify-content: space-between;
             align-items: center;
             margin-bottom: 25px;
-            padding: 20px 25px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 25px 30px;
+            background: var(--woohoo-gradient);
             border-radius: 12px;
             color: #fff;
         }
-        .wcsu-dashboard-header h1 {
-            color: #fff;
+        .wcsu-logo-container { margin-bottom: 5px; }
+        .wcsu-logo-img { max-height: 50px; width: auto; }
+        .wcsu-logo-text {
+            font-size: 36px;
+            font-weight: 800;
             margin: 0;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            font-size: 28px;
+            font-family: 'Arial Black', sans-serif;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
         }
-        .wcsu-dashboard-header h1 .dashicons {
-            font-size: 32px;
-            width: 32px;
-            height: 32px;
+        .woohoo-w { color: #fff; }
+        .woohoo-oo { color: #2B7FD4; }
+        .woohoo-h { color: #fff; }
+        .woohoo-oo2 { color: #F7941D; }
+        .wcsu-tagline {
+            margin: 5px 0 0;
+            font-size: 14px;
+            font-style: italic;
+            opacity: 0.95;
         }
         .wcsu-version {
-            margin: 5px 0 0;
-            opacity: 0.8;
-            font-size: 13px;
+            margin: 3px 0 0;
+            opacity: 0.7;
+            font-size: 12px;
         }
         .wcsu-score-badge {
             text-align: center;
             padding: 15px 25px;
-            background: rgba(255,255,255,0.15);
+            background: rgba(255,255,255,0.2);
             border-radius: 10px;
+            backdrop-filter: blur(5px);
         }
         .wcsu-score-badge .wcsu-score-number {
             display: block;
@@ -544,9 +562,9 @@ class WCSU_Admin {
             opacity: 0.9;
             text-transform: uppercase;
         }
-        .wcsu-score-badge.score-good { background: rgba(70, 180, 80, 0.3); }
-        .wcsu-score-badge.score-warning { background: rgba(255, 180, 0, 0.3); }
-        .wcsu-score-badge.score-bad { background: rgba(220, 50, 50, 0.3); }
+        .wcsu-score-badge.score-good { background: rgba(70, 180, 80, 0.35); }
+        .wcsu-score-badge.score-warning { background: rgba(255, 180, 0, 0.35); }
+        .wcsu-score-badge.score-bad { background: rgba(220, 50, 50, 0.35); }
 
         /* Cards Row */
         .wcsu-cards-row {
@@ -564,7 +582,11 @@ class WCSU_Admin {
             flex-wrap: wrap;
             align-items: flex-start;
             position: relative;
+            border-top: 3px solid transparent;
         }
+        .wcsu-card-cache { border-top-color: var(--woohoo-blue); }
+        .wcsu-card-database { border-top-color: var(--woohoo-orange); }
+        .wcsu-card-modules { border-top-color: #46b450; }
         .wcsu-card-icon {
             width: 50px;
             height: 50px;
@@ -580,27 +602,27 @@ class WCSU_Admin {
             height: 24px;
             color: #fff;
         }
-        .wcsu-card-cache .wcsu-card-icon { background: linear-gradient(135deg, #667eea, #764ba2); }
-        .wcsu-card-database .wcsu-card-icon { background: linear-gradient(135deg, #f093fb, #f5576c); }
-        .wcsu-card-modules .wcsu-card-icon { background: linear-gradient(135deg, #4facfe, #00f2fe); }
+        .wcsu-card-cache .wcsu-card-icon { background: var(--woohoo-blue); }
+        .wcsu-card-database .wcsu-card-icon { background: var(--woohoo-orange); }
+        .wcsu-card-modules .wcsu-card-icon { background: linear-gradient(135deg, #46b450, #7cc67c); }
 
         .wcsu-card-content { flex: 1; }
         .wcsu-card-content h3 { margin: 0 0 8px; font-size: 14px; color: #666; }
         .wcsu-card-stat { display: flex; align-items: baseline; gap: 8px; }
         .wcsu-stat-value { font-size: 28px; font-weight: 700; color: #333; }
         .wcsu-stat-value.wcsu-good { color: #46b450; }
-        .wcsu-stat-value.wcsu-warning { color: #ffb900; }
+        .wcsu-stat-value.wcsu-warning { color: var(--woohoo-orange); }
         .wcsu-stat-label { color: #888; font-size: 13px; }
         .wcsu-card-link {
             position: absolute;
             bottom: 15px;
             right: 20px;
-            color: #667eea;
+            color: var(--woohoo-blue);
             text-decoration: none;
             font-size: 13px;
             font-weight: 500;
         }
-        .wcsu-card-link:hover { text-decoration: underline; }
+        .wcsu-card-link:hover { color: var(--woohoo-orange); text-decoration: underline; }
 
         /* Two Columns */
         .wcsu-two-columns {
@@ -625,7 +647,7 @@ class WCSU_Admin {
             font-size: 16px;
             color: #333;
         }
-        .wcsu-panel h2 .dashicons { color: #667eea; }
+        .wcsu-panel h2 .dashicons { color: var(--woohoo-blue); }
 
         /* Modules List */
         .wcsu-modules-list { margin-bottom: 15px; }
@@ -885,7 +907,7 @@ class WCSU_Admin {
 
         ?>
         <div class="wrap wcsu-wrap">
-            <h1><?php _e('WC SpeedUp Settings', 'wc-speedup'); ?></h1>
+            <h1><?php _e('WooHoo Settings', 'woohoo'); ?></h1>
 
             <form method="post" action="" id="wcsu-settings-form">
                 <?php wp_nonce_field('wcsu_save_settings', 'wcsu_nonce'); ?>

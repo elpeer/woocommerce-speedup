@@ -1,12 +1,12 @@
 <?php
 /**
- * Plugin Name: WC SpeedUp - WooCommerce Performance Optimizer
+ * Plugin Name: WooHoo - WooCommerce Performance Optimizer
  * Plugin URI: https://github.com/elpeer/woocommerce-speedup
- * Description: מאיץ את אתר הווקומרס שלך - מזהה בעיות ביצועים, מנקה את מסד הנתונים, מייעל שאילתות ומאיץ את הטעינה
- * Version: 1.0.0
+ * Description: WooCommerce, but faster. WooHoo! Your shop on espresso: faster browsing, smoother checkout.
+ * Version: 1.1.0
  * Author: ElPeer
  * Author URI: https://github.com/elpeer
- * Text Domain: wc-speedup
+ * Text Domain: woohoo
  * Domain Path: /languages
  * Requires at least: 5.0
  * Requires PHP: 7.4

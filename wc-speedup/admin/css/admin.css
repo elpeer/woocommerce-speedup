@@ -1,6 +1,13 @@
 /**
- * WC SpeedUp Admin Styles
+ * WooHoo Admin Styles
+ * WooCommerce, but faster. WooHoo!
  */
+
+:root {
+    --woohoo-blue: #2B7FD4;
+    --woohoo-orange: #F7941D;
+    --woohoo-gradient: linear-gradient(135deg, #2B7FD4 0%, #F7941D 100%);
+}
 
 /* General */
 .wcsu-wrap {
@@ -122,9 +129,9 @@
 }
 
 .wcsu-action-btn:hover {
-    background: #2271b1;
+    background: var(--woohoo-blue);
     color: #fff;
-    border-color: #2271b1;
+    border-color: var(--woohoo-blue);
 }
 
 .wcsu-action-btn .dashicons {
@@ -365,7 +372,7 @@
     display: block;
     font-size: 28px;
     font-weight: bold;
-    color: #2271b1;
+    color: var(--woohoo-blue);
     margin-bottom: 5px;
 }
 
@@ -513,7 +520,7 @@
     width: 20px;
     height: 20px;
     border: 2px solid #f3f3f3;
-    border-top: 2px solid #2271b1;
+    border-top: 2px solid var(--woohoo-blue);
     border-radius: 50%;
     animation: wcsu-spin 1s linear infinite;
 }
@@ -709,12 +716,12 @@
 
 /* One-Click Optimizer Section */
 .wcsu-one-click-optimizer {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: var(--woohoo-gradient);
     border-radius: 12px;
     padding: 30px;
     margin-bottom: 30px;
     color: #fff;
-    box-shadow: 0 10px 40px rgba(102, 126, 234, 0.4);
+    box-shadow: 0 10px 40px rgba(43, 127, 212, 0.4);
 }
 
 .wcsu-optimizer-header {
@@ -808,7 +815,7 @@
     font-size: 18px;
     font-weight: bold;
     background: #fff;
-    color: #667eea;
+    color: var(--woohoo-blue);
     border: none;
     border-radius: 50px;
     cursor: pointer;
@@ -1011,7 +1018,7 @@
     justify-content: center;
     width: 36px;
     height: 36px;
-    background: #2271b1;
+    background: var(--woohoo-blue);
     color: #fff;
     border-radius: 50%;
     font-weight: bold;
