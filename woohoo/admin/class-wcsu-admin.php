@@ -1699,6 +1699,26 @@ class WCSU_Admin {
                                 </p>
                             </td>
                         </tr>
+                        <tr>
+                            <th scope="row"><?php _e('Required Cookies', 'wc-speedup'); ?></th>
+                            <td>
+                                <textarea name="page_cache_required_cookies" id="wcsu-cache-required-cookies" rows="3" class="large-text code"><?php echo esc_textarea(isset($options['page_cache_required_cookies']) ? $options['page_cache_required_cookies'] : ''); ?></textarea>
+                                <p class="description">
+                                    <?php _e('Cookies that MUST exist to serve cached pages. If missing, page will be generated fresh.', 'wc-speedup'); ?><br>
+                                    <?php _e('Example: allow-cookies (for cookie consent popups)', 'wc-speedup'); ?>
+                                </p>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th scope="row"><?php _e('Bypass Cookies', 'wc-speedup'); ?></th>
+                            <td>
+                                <textarea name="page_cache_bypass_cookies" id="wcsu-cache-bypass-cookies" rows="3" class="large-text code"><?php echo esc_textarea(isset($options['page_cache_bypass_cookies']) ? $options['page_cache_bypass_cookies'] : ''); ?></textarea>
+                                <p class="description">
+                                    <?php _e('Cookies that when PRESENT should bypass the cache. One cookie name per line.', 'wc-speedup'); ?><br>
+                                    <?php _e('Example: preview_mode, debug_mode', 'wc-speedup'); ?>
+                                </p>
+                            </td>
+                        </tr>
                     </table>
 
                     <p class="submit">
@@ -1852,7 +1872,9 @@ class WCSU_Admin {
 
                 var options = {
                     page_cache_ttl: $('#wcsu-cache-ttl').val(),
-                    page_cache_exclude: $('#wcsu-cache-exclude').val()
+                    page_cache_exclude: $('#wcsu-cache-exclude').val(),
+                    page_cache_required_cookies: $('#wcsu-cache-required-cookies').val(),
+                    page_cache_bypass_cookies: $('#wcsu-cache-bypass-cookies').val()
                 };
 
                 $.ajax({

@@ -131,9 +131,8 @@ class WCSU_Page_Cache {
         // 2. The cached HTML will work fine - JS updates the wishlist buttons
         // 3. Checking wishlist cookies blocks caching for too many users
 
-        // Don't serve cache if user hasn't accepted cookie consent
-        // This ensures the PHP cookie check in footer.php runs and shows the popup
-        if (!$this->has_cookie_consent()) {
+        // Check for custom bypass cookies (from settings)
+        if ($this->has_bypass_cookie()) {
             return false;
         }
 
@@ -154,11 +153,37 @@ class WCSU_Page_Cache {
     }
 
     /**
-     * Check if user has accepted cookie consent
-     * If not, don't serve from cache so the popup can be shown
+     * Check if user has any of the bypass cookies defined in settings
+     * These are cookies that when MISSING should bypass the cache
      */
-    private function has_cookie_consent() {
-        return isset($_COOKIE['allow-cookies']) && !empty($_COOKIE['allow-cookies']);
+    private function has_bypass_cookie() {
+        $options = get_option('wcsu_options', array());
+
+        // Get required cookies from settings (cookies that must exist to serve cache)
+        if (!empty($options['page_cache_required_cookies'])) {
+            $required_cookies = array_filter(array_map('trim', explode("\n", $options['page_cache_required_cookies'])));
+            foreach ($required_cookies as $cookie_name) {
+                if (empty($cookie_name)) continue;
+                // If required cookie is missing, bypass cache
+                if (!isset($_COOKIE[$cookie_name]) || empty($_COOKIE[$cookie_name])) {
+                    return true;
+                }
+            }
+        }
+
+        // Get bypass cookies from settings (cookies that when present should bypass cache)
+        if (!empty($options['page_cache_bypass_cookies'])) {
+            $bypass_cookies = array_filter(array_map('trim', explode("\n", $options['page_cache_bypass_cookies'])));
+            foreach ($bypass_cookies as $cookie_name) {
+                if (empty($cookie_name)) continue;
+                // If bypass cookie exists, bypass cache
+                if (isset($_COOKIE[$cookie_name]) && !empty($_COOKIE[$cookie_name])) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
     }
 
     /**
