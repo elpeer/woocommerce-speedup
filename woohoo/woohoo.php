@@ -44,6 +44,7 @@ final class WC_SpeedUp {
     public $database;
     public $cache;
     public $page_cache;
+    public $cache_prewarmer;
     public $woo_optimizer;
     public $query_profiler;
     public $auto_optimizer;
@@ -94,6 +95,7 @@ final class WC_SpeedUp {
         require_once WCSU_PLUGIN_DIR . 'includes/class-wcsu-database.php';
         require_once WCSU_PLUGIN_DIR . 'includes/class-wcsu-cache.php';
         require_once WCSU_PLUGIN_DIR . 'includes/class-wcsu-page-cache.php';
+        require_once WCSU_PLUGIN_DIR . 'includes/class-wcsu-cache-prewarmer.php';
         require_once WCSU_PLUGIN_DIR . 'includes/class-wcsu-woo-optimizer.php';
         require_once WCSU_PLUGIN_DIR . 'includes/class-wcsu-query-profiler.php';
         require_once WCSU_PLUGIN_DIR . 'includes/class-wcsu-auto-optimizer.php';
@@ -145,6 +147,7 @@ final class WC_SpeedUp {
         $this->database = new WCSU_Database();
         $this->cache = new WCSU_Cache();
         $this->page_cache = new WCSU_Page_Cache();
+        $this->cache_prewarmer = new WCSU_Cache_Prewarmer();
         $this->woo_optimizer = new WCSU_Woo_Optimizer();
         $this->query_profiler = new WCSU_Query_Profiler();
         $this->auto_optimizer = new WCSU_Auto_Optimizer();

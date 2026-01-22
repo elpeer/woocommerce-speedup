@@ -1750,6 +1750,78 @@ class WCSU_Admin {
                 </p>
             </div>
 
+            <!-- Cache Prewarmer -->
+            <div class="wcsu-settings-section">
+                <h2><?php _e('Cache Prewarmer', 'wc-speedup'); ?></h2>
+                <p class="description">
+                    <?php _e('Automatically warms the cache in the background for all pages on your site.', 'wc-speedup'); ?>
+                </p>
+
+                <?php $prewarm_status = wcsu()->cache_prewarmer->get_status(); ?>
+
+                <table class="form-table">
+                    <tr>
+                        <th scope="row"><?php _e('Auto Prewarm', 'wc-speedup'); ?></th>
+                        <td>
+                            <label class="wcsu-toggle">
+                                <input type="checkbox" id="wcsu-auto-prewarm" <?php checked($prewarm_status['auto_enabled']); ?>>
+                                <span class="slider"></span>
+                            </label>
+                            <p class="description">
+                                <?php _e('Automatically prewarm cache after it is cleared.', 'wc-speedup'); ?>
+                            </p>
+                        </td>
+                    </tr>
+                </table>
+
+                <div id="wcsu-prewarm-status" style="margin: 20px 0; padding: 15px; background: #f9f9f9; border-radius: 4px;">
+                    <div style="display: flex; align-items: center; gap: 15px;">
+                        <div>
+                            <strong><?php _e('Status:', 'wc-speedup'); ?></strong>
+                            <span id="wcsu-prewarm-status-text">
+                                <?php if ($prewarm_status['running']): ?>
+                                    <span style="color: #2271b1;"><?php _e('Running', 'wc-speedup'); ?></span>
+                                <?php else: ?>
+                                    <span style="color: #666;"><?php _e('Idle', 'wc-speedup'); ?></span>
+                                <?php endif; ?>
+                            </span>
+                        </div>
+                        <div>
+                            <strong><?php _e('Progress:', 'wc-speedup'); ?></strong>
+                            <span id="wcsu-prewarm-progress"><?php echo $prewarm_status['processed']; ?> / <?php echo $prewarm_status['total']; ?></span>
+                        </div>
+                        <?php if ($prewarm_status['last_run']): ?>
+                        <div>
+                            <strong><?php _e('Last Run:', 'wc-speedup'); ?></strong>
+                            <span><?php echo human_time_diff($prewarm_status['last_run']); ?> <?php _e('ago', 'wc-speedup'); ?></span>
+                        </div>
+                        <?php endif; ?>
+                    </div>
+
+                    <div id="wcsu-prewarm-progressbar" style="margin-top: 10px; background: #ddd; border-radius: 4px; height: 20px; overflow: hidden;">
+                        <div style="width: <?php echo $prewarm_status['progress']; ?>%; background: #2271b1; height: 100%; transition: width 0.3s;"></div>
+                    </div>
+
+                    <p id="wcsu-prewarm-last-url" style="margin-top: 10px; font-size: 12px; color: #666;">
+                        <?php if (!empty($prewarm_status['last_url'])): ?>
+                            <?php _e('Last URL:', 'wc-speedup'); ?> <?php echo esc_html($prewarm_status['last_url']); ?>
+                        <?php endif; ?>
+                    </p>
+                </div>
+
+                <p>
+                    <button class="button button-primary" id="wcsu-start-prewarm" <?php disabled($prewarm_status['running']); ?>>
+                        <span class="dashicons dashicons-update"></span>
+                        <?php _e('Start Prewarming', 'wc-speedup'); ?>
+                    </button>
+                    &nbsp;
+                    <button class="button button-secondary" id="wcsu-stop-prewarm" <?php disabled(!$prewarm_status['running']); ?>>
+                        <span class="dashicons dashicons-no"></span>
+                        <?php _e('Stop', 'wc-speedup'); ?>
+                    </button>
+                </p>
+            </div>
+
             <!-- Debug Info -->
             <div class="wcsu-settings-section">
                 <h2><?php _e('Debug Information', 'wc-speedup'); ?></h2>
@@ -1953,6 +2025,115 @@ class WCSU_Admin {
                     }
                 });
             });
+
+            // Cache Prewarmer
+            var prewarmInterval = null;
+
+            function updatePrewarmStatus() {
+                $.ajax({
+                    url: wcsu_vars.ajax_url,
+                    type: 'POST',
+                    data: {
+                        action: 'wcsu_get_prewarm_status',
+                        nonce: wcsu_vars.nonce
+                    },
+                    success: function(response) {
+                        if (response.success) {
+                            var status = response.data;
+                            $('#wcsu-prewarm-progress').text(status.processed + ' / ' + status.total);
+                            $('#wcsu-prewarm-progressbar div').css('width', status.progress + '%');
+
+                            if (status.last_url) {
+                                $('#wcsu-prewarm-last-url').text('<?php _e('Last URL:', 'wc-speedup'); ?> ' + status.last_url);
+                            }
+
+                            if (status.running) {
+                                $('#wcsu-prewarm-status-text').html('<span style="color: #2271b1;"><?php _e('Running', 'wc-speedup'); ?></span>');
+                                $('#wcsu-start-prewarm').prop('disabled', true);
+                                $('#wcsu-stop-prewarm').prop('disabled', false);
+                            } else {
+                                $('#wcsu-prewarm-status-text').html('<span style="color: #666;"><?php _e('Idle', 'wc-speedup'); ?></span>');
+                                $('#wcsu-start-prewarm').prop('disabled', false);
+                                $('#wcsu-stop-prewarm').prop('disabled', true);
+                                if (prewarmInterval) {
+                                    clearInterval(prewarmInterval);
+                                    prewarmInterval = null;
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+
+            $('#wcsu-start-prewarm').on('click', function(e) {
+                e.preventDefault();
+                var $btn = $(this);
+                $btn.prop('disabled', true);
+
+                $.ajax({
+                    url: wcsu_vars.ajax_url,
+                    type: 'POST',
+                    data: {
+                        action: 'wcsu_start_prewarm',
+                        nonce: wcsu_vars.nonce
+                    },
+                    success: function(response) {
+                        if (response.success) {
+                            WCSU_Admin.showToast(response.data.message, 'success');
+                            prewarmInterval = setInterval(updatePrewarmStatus, 3000);
+                            updatePrewarmStatus();
+                        } else {
+                            WCSU_Admin.showToast(response.data, 'error');
+                            $btn.prop('disabled', false);
+                        }
+                    }
+                });
+            });
+
+            $('#wcsu-stop-prewarm').on('click', function(e) {
+                e.preventDefault();
+                var $btn = $(this);
+                $btn.prop('disabled', true);
+
+                $.ajax({
+                    url: wcsu_vars.ajax_url,
+                    type: 'POST',
+                    data: {
+                        action: 'wcsu_stop_prewarm',
+                        nonce: wcsu_vars.nonce
+                    },
+                    success: function(response) {
+                        WCSU_Admin.showToast(response.data, 'success');
+                        updatePrewarmStatus();
+                    }
+                });
+            });
+
+            $('#wcsu-auto-prewarm').on('change', function() {
+                var enabled = $(this).is(':checked');
+
+                $.ajax({
+                    url: wcsu_vars.ajax_url,
+                    type: 'POST',
+                    data: {
+                        action: 'wcsu_toggle_auto_prewarm',
+                        enabled: enabled ? 1 : 0,
+                        nonce: wcsu_vars.nonce
+                    },
+                    success: function(response) {
+                        WCSU_Admin.showToast(response.data, 'success');
+                        if (enabled) {
+                            prewarmInterval = setInterval(updatePrewarmStatus, 3000);
+                        }
+                        updatePrewarmStatus();
+                    }
+                });
+            });
+
+            // Start polling if prewarm is running
+            <?php if ($prewarm_status['running']): ?>
+            prewarmInterval = setInterval(updatePrewarmStatus, 3000);
+            <?php endif; ?>
 
             // Clear debug log
             $('#wcsu-clear-debug-log').on('click', function(e) {
