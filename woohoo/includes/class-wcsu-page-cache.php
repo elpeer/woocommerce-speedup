@@ -131,6 +131,12 @@ class WCSU_Page_Cache {
         // 2. The cached HTML will work fine - JS updates the wishlist buttons
         // 3. Checking wishlist cookies blocks caching for too many users
 
+        // Don't serve cache if user hasn't accepted cookie consent
+        // This ensures the PHP cookie check in footer.php runs and shows the popup
+        if (!$this->has_cookie_consent()) {
+            return false;
+        }
+
         return true;
     }
 
@@ -145,6 +151,14 @@ class WCSU_Page_Cache {
             }
         }
         return false;
+    }
+
+    /**
+     * Check if user has accepted cookie consent
+     * If not, don't serve from cache so the popup can be shown
+     */
+    private function has_cookie_consent() {
+        return isset($_COOKIE['allow-cookies']) && !empty($_COOKIE['allow-cookies']);
     }
 
     /**
